@@ -7,10 +7,8 @@ const {
   misQuery,
   mchQueryMod,
 } = require("../../helpers/dbconn");
-// const { createFolder } = require("../../helpers/dbconn");
 
 OrderListRouter.post(`/getOrderListByType`, async (req, res, next) => {
-  //   console.log("reqqq", req.body.type);
   try {
     misQueryMod(
       `SELECT 
@@ -22,13 +20,12 @@ OrderListRouter.post(`/getOrderListByType`, async (req, res, next) => {
                 INNER JOIN
             magodmis.cust_data ON magodmis.order_list.Cust_Code = magodmis.cust_data.Cust_Code
         WHERE
-            Type = '${req.body.type}' AND Order_Status = 'Closed'
+            Type = '${req.body.type}'
         ORDER BY Order_Date DESC`,
       (err, data) => {
         if (err) {
           console.log("err", err);
         } else {
-          //   console.log("data", data);
           res.send(data);
         }
       }
@@ -40,7 +37,6 @@ OrderListRouter.post(`/getOrderListByType`, async (req, res, next) => {
 OrderListRouter.post(
   `/getOrderListByTypeGroupedCustomer`,
   async (req, res, next) => {
-    //   console.log("reqqq", req.body.type);
     try {
       misQueryMod(
         `SELECT 
@@ -50,14 +46,13 @@ OrderListRouter.post(
                 INNER JOIN
             magodmis.cust_data ON magodmis.order_list.Cust_Code = magodmis.cust_data.Cust_Code
         WHERE
-            Type = '${req.body.type}' AND Order_Status = 'Closed'
+            Type = '${req.body.type}'
         GROUP BY magodmis.cust_data.Cust_Code
         ORDER BY magodmis.cust_data.Cust_name`,
         (err, data) => {
           if (err) {
             console.log("err", err);
           } else {
-            //   console.log("data", data);
             res.send(data);
           }
         }
