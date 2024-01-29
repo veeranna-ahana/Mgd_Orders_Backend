@@ -34,6 +34,7 @@ const packinvRouter = require("./routes/packinv");
 const analysisRouter = require("./routes/analysis");
 const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
+const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
 
 app.use(cors());
@@ -66,6 +67,7 @@ app.use("/packinv", packinvRouter);
 app.use("/analysis", analysisRouter);
 app.use("/accounts", accountsRouter);
 app.use("/file", fileRouter);
+app.use("/orderList", orderListRouter);
 // app.use(fileUpload());
 
 app.use((err, req, res, next) => {
