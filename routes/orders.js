@@ -16,7 +16,7 @@ const { logger } = require("../helpers/logger");
 ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
   console.log("Creating new order - I");
   try {
-    console.log("Creating new order");
+    //console.log("Creating new order");
     let zzz = new Date();
     const orddate =
       zzz.getFullYear() +
@@ -52,7 +52,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
     const billingstateId = "00";
     const DelStateId = "00";
 
-    console.log("Before Order");
+    //console.log("Before Order");
     let runningno = 0;
 
     // Retrieve the running number for orders
@@ -60,23 +60,23 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
       `SELECT * FROM magod_setup.magod_runningno WHERE SrlType='Order' AND UnitName='Jigani' ORDER BY Id DESC LIMIT 1`,
       async (err, runningNoResult) => {
         if (err) {
-          console.log(err);
+          //console.log(err);
           return;
         }
-        console.log(runningNoResult);
+        //console.log(runningNoResult);
         runningno = runningNoResult[0]["Running_No"];
-        console.log(runningno);
+        //console.log(runningno);
         // Generate the order number
         let ordno = `${zzz.getFullYear().toString().substr(-2)}${(
           parseInt(runningno) + 1
         )
           .toString()
           .padStart(3, "0")}`;
-        console.log(ordno);
+        //console.log(ordno);
         // Create folder on the server
         await createFolder("Order", ordno, "");
 
-        console.log("After Qtn");
+        //console.log("After Qtn");
 
         // Insert the order details into the database
         await misQueryMod(
@@ -89,7 +89,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
             '${Transportcharges}', '${ordertype}', '${0}', '${qtnno}')`,
           (err, insertResult) => {
             if (err) logger.error(err);
-            console.log("Inserted order data:", insertResult);
+            //console.log("Inserted order data:", insertResult);
 
             //   if (insertResult.affectedRows === 1) {
             // Update the running number for orders
@@ -97,7 +97,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
               `UPDATE magod_setup.magod_runningno SET Running_No = Running_No + 1 WHERE SrlType='Order' AND Id = ${runningNoResult[0]["Id"]}`,
               (err, updateResult) => {}
             );
-            console.log("Updated running number.");
+            //console.log("Updated running number.");
             res.send({ message: "Saved Successfully", orderno: ordno });
           }
         );
@@ -118,7 +118,7 @@ ordersRouter.post(`/getqtnnossentdata`, async (req, res, next) => {
       async (err, data) => {
         if (err) logger.error(err);
         res.send(data);
-        console.log("QTN DROPDOWN DATA", data);
+        //console.log("QTN DROPDOWN DATA", data);
       }
     );
   } catch (error) {
@@ -128,16 +128,16 @@ ordersRouter.post(`/getqtnnossentdata`, async (req, res, next) => {
 
 ordersRouter.post(`/getorderdata`, async (req, res, next) => {
   try {
-    console.log("Getting order data");
+    //console.log("Getting order data");
     const orderno = req.body.ordno;
     const ordtype = req.body.ordtype;
-    console.log(orderno, ordtype);
+    //console.log(orderno, ordtype);
     misQueryMod(
       `SELECT ord.*,cust.Cust_name FROM magodmis.order_list ord 
         left outer join magodmis.cust_data cust on cust.Cust_code = ord.Cust_Code
         WHERE order_no = '${orderno}' and type='${ordtype}'`,
       (err, orderdata) => {
-        console.log(orderdata);
+        //console.log(orderdata);
         res.send(orderdata);
       }
     );
@@ -155,7 +155,7 @@ ordersRouter.get(`/getcombinedschdata`, async (req, res, next) => {
         AND o.Operation=n.Operation
         GROUP BY  n.Mtrl_Code, n.Operation ORDER BY n.Mtrl_Code, n.Operation`,
       (err, cmbdschdata) => {
-        console.log(cmbdschdata);
+        //console.log(cmbdschdata);
         res.send(cmbdschdata);
       }
     );
@@ -171,7 +171,7 @@ ordersRouter.post(`/getorderscheduledata`, async (req, res, next) => {
       `SELECT o.* FROM magodmis.orderschedule o WHERE  o.Schedule_Status ='Tasked'  AND o.Cust_Code='${ccode}' 
                     AND o.PO not like 'Combined' AND o.Type='Profile' AND o.ScheduleType= 'Job Work'`,
       (err, ordschdata) => {
-        console.log(ordschdata);
+        //console.log(ordschdata);
         res.send(ordschdata);
       }
     );
@@ -182,11 +182,11 @@ ordersRouter.post(`/getorderscheduledata`, async (req, res, next) => {
 ordersRouter.post(`/getselectedschdwgdata`, async (req, res, next) => {
   try {
     let scheduleid = req.body.schid;
-    console.log(scheduleid);
+    //console.log(scheduleid);
     misQueryMod(
       `SELECT * FROM magodmis.orderscheduledetails WHERE  scheduleid ='${scheduleid}'`,
       (err, ordschdwgdata) => {
-        console.log(ordschdwgdata);
+        //console.log(ordschdwgdata);
         res.send(ordschdwgdata);
       }
     );
@@ -206,7 +206,7 @@ ordersRouter.post(`/getsalestasksdata`, async (req, res, next) => {
                     AND o.Operation=n.Operation
                     GROUP BY  n.Mtrl_Code, n.Operation ORDER BY n.Mtrl_Code, n.Operation`,
       (err, slstskdata) => {
-        console.log(slstskdata);
+        //console.log(slstskdata);
         res.send(slstskdata);
       }
     );
@@ -218,10 +218,10 @@ ordersRouter.post(`/getsalestasksdata`, async (req, res, next) => {
 
 ordersRouter.post(`/getselectedsalestasklist`, async (req, res, next) => {
   try {
-    console.log("Getting selected sales task list");
+    //console.log("Getting selected sales task list");
     let mtrlcode = req.body.mtrl;
     let opern = req.body.opertn;
-    console.log(mtrlcode, opern);
+    //console.log(mtrlcode, opern);
     misQueryMod(
       `SELECT   n.Mtrl_Code, n.Operation,n.MProcess,@SalesTasksId as SalesTasksId,
         n.NcTaskId,n.ScheduleId,
@@ -231,7 +231,7 @@ ordersRouter.post(`/getselectedsalestasklist`, async (req, res, next) => {
         AND n.Cust_Code=c.Cust_Code AND n.TStatus='Created' AND n.ScheduleId=n.ScheduleId 
         AND Not( n.TaskNo  Like '99%' OR n.TaskNo  Like '88%' ) AND o.Schedule_Status='Tasked'`,
       (err, slstskdata) => {
-        console.log(slstskdata);
+        //console.log(slstskdata);
         res.send(slstskdata);
       }
     );
@@ -242,14 +242,14 @@ ordersRouter.post(`/getselectedsalestasklist`, async (req, res, next) => {
 
 ordersRouter.post(`/preparescheduledetails`, async (req, res, next) => {
   try {
-    console.log("Preparing schedule details");
+    //console.log("Preparing schedule details");
     let nctskid = req.body.nctaskid;
     misQueryMod(
       `SELECT n.NcTaskId, n.TaskNo, o.SchDetailsID, o.ScheduleId, o.Cust_Code, o.DwgName, o.Mtrl_Code,
 o.MProcess, o.Mtrl_Source, o.InspLevel, o.QtyScheduled as QtyToNest, o.DwgStatus, o.Operation, o.Tolerance
 FROM magodmis.orderscheduledetails o,magodmis.nc_task_list n WHERE  o.NcTaskId=n.NcTaskId AND n.NcTaskId='${nctskid}'`,
       (err, prepschdata) => {
-        console.log(prepschdata);
+        //console.log(prepschdata);
         res.send(prepschdata);
       }
     );
@@ -260,12 +260,12 @@ FROM magodmis.orderscheduledetails o,magodmis.nc_task_list n WHERE  o.NcTaskId=n
 
 ordersRouter.post(`/getorderdwgdata`, async (req, res, next) => {
   try {
-    console.log("Getting order data");
+    //console.log("Getting order data");
     const orderno = req.body.ordno;
     misQueryMod(
       `SELECT * FROM magodmis.order_details WHERE order_no = '${orderno}'`,
       (err, orderdwgdetsdata) => {
-        console.log(orderdwgdetsdata);
+        //console.log(orderdwgdetsdata);
         res.send(orderdwgdetsdata);
       }
     );
@@ -276,12 +276,12 @@ ordersRouter.post(`/getorderdwgdata`, async (req, res, next) => {
 
 ordersRouter.post(`/getorddetailsdata`, async (req, res, next) => {
   try {
-    console.log("Getting order data");
+    //console.log("Getting order data");
     const orderno = req.body.ordno;
     misQueryMod(
       `SELECT * FROM magodmis.order_details WHERE order_no = '${orderno}'`,
       (err, orderdwgdetsdata) => {
-        console.log(orderdwgdetsdata);
+        //console.log(orderdwgdetsdata);
         res.send(orderdwgdetsdata);
       }
     );
@@ -294,7 +294,7 @@ ordersRouter.post(`/getorderlistdata`, async (req, res, next) => {
   console.log("Getting order list data");
   try {
     let otype = req.body.otype;
-    console.log(otype);
+    //console.log(otype);
     let ordstatus = req.body.ordstatus;
     let strInternalType = req.body.strInternalType;
     let StrOrderType = "Complete";
@@ -304,7 +304,7 @@ ordersRouter.post(`/getorderlistdata`, async (req, res, next) => {
     sql = `SELECT o.*,c.Cust_name FROM magodmis.order_list o
       JOIN magodmis.cust_data c ON o.cust_code = c.cust_code
       WHERE o.cust_code=c.cust_code AND o.Type= '${otype}'`;
-    console.log(sql);
+    //console.log(sql);
     switch (strInternalType) {
       case "Fixture":
         sql = sql + " AND `Order-Ref` like 'Fixture'";
@@ -316,7 +316,7 @@ ordersRouter.post(`/getorderlistdata`, async (req, res, next) => {
         sql = sql + " AND `Order-Ref` is null";
         break;
     }
-    console.log(sql);
+    //console.log(sql);
     if ((StrOrderType = "Closed")) {
       //if (ordstatus = "Closed") {
       sql = sql + ` AND o.order_status like '${ordstatus}'`;
@@ -335,9 +335,9 @@ ordersRouter.post(`/getorderlistdata`, async (req, res, next) => {
       sql = sql + ` AND o.order_status like '${StrOrderType}'`;
     }
     sql = sql + ` ORDER BY o.Order_Date DESC,o.Order_No Desc;`;
-    console.log(sql);
+    //console.log(sql);
     misQueryMod(sql, (err, orderlistdata) => {
-      console.log(orderlistdata);
+      //console.log(orderlistdata);
       res.send(orderlistdata);
     });
   } catch (error) {
@@ -347,12 +347,12 @@ ordersRouter.post(`/getorderlistdata`, async (req, res, next) => {
 
 ordersRouter.post(`/getorderstatuslist`, async (req, res, next) => {
   try {
-    console.log("Getting order status list");
+    //console.log("Getting order status list");
     const orderno = req.body.ordno;
     misQueryMod(
       "SELECT m.* FROM magod_setup.magod_statuslist m WHERE m.`Function` = 'Order' order by Id asc",
       (err, orderstatuslist) => {
-        console.log("orderstatuslist", orderstatuslist);
+        //console.log("orderstatuslist", orderstatuslist);
         res.send(orderstatuslist);
       }
     );
@@ -375,11 +375,48 @@ ordersRouter.post("/getOrderDataforFindOrder", async (req, res) => {
       (err, data) => {
         if (err) logger.error(err);
 
-        console.log("FindOrderdata....", data);
+        // console.log("FindOrderdata....", data);
         res.send(data);
       }
     );
   } catch (error) {}
+});
+
+ordersRouter.post(`/getOrderDetailsByOrdrNoAndType`, async (req, res, next) => {
+  // console.log("req", req.body);
+  try {
+    // const ordtype = req.body.ordtype;
+    misQueryMod(
+      `SELECT * FROM magodmis.order_list WHERE Order_No='${req.body.orderNo}'`,
+      async (err, orderData) => {
+        if (err) {
+          logger.error(err);
+        } else {
+          try {
+            misQueryMod(
+              `SELECT 
+                  magodmis.cust_data.*
+              FROM
+                  magodmis.order_list
+                      INNER JOIN
+                  magodmis.cust_data ON magodmis.order_list.Cust_Code = magodmis.cust_data.Cust_Code
+              WHERE
+                  magodmis.order_list.Order_No = '${req.body.orderNo}'`,
+              async (err, custData) => {
+                if (err) logger.error(err);
+                res.send({ orderData: orderData, custData: custData });
+              }
+            );
+          } catch (error) {
+            next(error);
+          }
+        }
+        // console.log("order data", data);
+      }
+    );
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = ordersRouter;
