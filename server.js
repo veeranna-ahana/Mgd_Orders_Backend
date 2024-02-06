@@ -5,8 +5,13 @@ const cors = require("cors");
 
 const app = express();
 
-const userRouter = require("./routes/user");
+// NEW ORDER ROUTES
+const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
+const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreationRouter");
+const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvListRouter");
+const SchduleListRouter = require("./routes/OrderRoutes/SchduleListRouter");
 
+const userRouter = require("./routes/user");
 const unitRouter = require("./routes/units");
 const quoteRouter = require("./routes/quotations");
 const customerRouter = require("./routes/customer");
@@ -69,6 +74,12 @@ app.use("/accounts", accountsRouter);
 app.use("/file", fileRouter);
 app.use("/orderList", orderListRouter);
 // app.use(fileUpload());
+
+// NEW ODER ROUTES
+app.use("/OrderDetails", OrderDetailsRouter);
+app.use("/ProductionSchCreation", ProductionSchCreationRouter);
+app.use("/ProfarmaInvList", ProfarmaInvListRouter);
+app.use("/SchduleList", SchduleListRouter);
 
 app.use((err, req, res, next) => {
   res.status(err.status || 500);
