@@ -14,7 +14,7 @@ const { createFolder } = require("../helpers/folderhelper");
 const { logger } = require("../helpers/logger");
 
 ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
-  console.log("Creating new order - I");
+  //console.log("Creating new order - I");
   try {
     //console.log("Creating new order");
     let zzz = new Date();
@@ -291,7 +291,7 @@ ordersRouter.post(`/getorddetailsdata`, async (req, res, next) => {
 });
 
 ordersRouter.post(`/getorderlistdata`, async (req, res, next) => {
-  console.log("Getting order list data");
+  //console.log("Getting order list data");
   try {
     let otype = req.body.otype;
     //console.log(otype);
@@ -364,8 +364,8 @@ ordersRouter.post(`/getorderstatuslist`, async (req, res, next) => {
 //-----------------------------------------------------------------------------
 
 ordersRouter.post("/getOrderDataforFindOrder", async (req, res) => {
-  console.log("req.body -", req.body);
-  console.log("req.body -", req.body.ordtype);
+  //console.log("req.body -", req.body);
+  //console.log("req.body -", req.body.ordtype);
   try {
     misQueryMod(
       `SELECT o.Order_No
@@ -420,7 +420,7 @@ ordersRouter.post(`/getOrderDetailsByOrdrNoAndType`, async (req, res, next) => {
 });
 
 ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
-  console.log("req", req.body);
+  //console.log("req", req.body);
 
   try {
     try {
@@ -434,7 +434,7 @@ ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
                   Order_No = '${req.body.OrderNo}'`,
         async (err, srldata) => {
           if (err) logger.error(err);
-          console.log("srldata", srldata);
+          //console.log("srldata", srldata);
           res.send(srldata);
         }
       );
@@ -447,7 +447,7 @@ ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
 });
 
 ordersRouter.post(`/insertnewsrldata`, async (req, res, next) => {
-  console.log("req", req.body);
+  //console.log("req", req.body);
   try {
     // misQueryMod(
     //   `'INSERT INTO magodmis.order_details (order_no, order_srl, cust_code, dwgname, Dwg_Code, ' +
