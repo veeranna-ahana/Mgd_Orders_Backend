@@ -7,9 +7,9 @@ const app = express();
 
 // NEW ORDER ROUTES
 const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
-const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreationRouter");
-const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvListRouter");
-const SchduleListRouter = require("./routes/OrderRoutes/SchduleListRouter");
+const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
+const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
+const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
 
 const userRouter = require("./routes/user");
 const unitRouter = require("./routes/units");
@@ -76,10 +76,10 @@ app.use("/orderList", orderListRouter);
 // app.use(fileUpload());
 
 // NEW ODER ROUTES
-app.use("/OrderDetails", OrderDetailsRouter);
-app.use("/ProductionSchCreation", ProductionSchCreationRouter);
-app.use("/ProfarmaInvList", ProfarmaInvListRouter);
-app.use("/SchduleList", SchduleListRouter);
+app.use("/orderDetails", OrderDetailsRouter);
+app.use("/productionSchCreation", ProductionSchCreationRouter);
+app.use("/profarmaInvList", ProfarmaInvListRouter);
+app.use("/scheduleList", ScheduleListRouter);
 
 app.use((err, req, res, next) => {
   res.status(err.status || 500);
