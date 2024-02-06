@@ -419,4 +419,68 @@ ordersRouter.post(`/getOrderDetailsByOrdrNoAndType`, async (req, res, next) => {
   }
 });
 
+ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
+  console.log("req", req.body);
+
+  try {
+    try {
+      misQueryMod(
+        `SELECT 
+                * 
+              FROM
+                  magodmis.order_details
+                      
+              WHERE
+                  Order_No = '${req.body.OrderNo}'`,
+        async (err, srldata) => {
+          if (err) logger.error(err);
+          console.log("srldata", srldata);
+          res.send(srldata);
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+ordersRouter.post(`/insertnewsrldata`, async (req, res, next) => {
+  console.log("req", req.body);
+  try {
+    // misQueryMod(
+    //   `'INSERT INTO magodmis.order_details (order_no, order_srl, cust_code, dwgname, Dwg_Code, ' +
+    //   'mtrl_code, operation, mtrl_source, qty_ordered, insplevel, ' +
+    //   'packinglevel, delivery_date, JwCost, mtrlcost, Dwg, Tolerance, HasBOM) ' +
+    //   'VALUES (, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    //   [
+    //     Orders1.Order_No,
+    //     Orders1.Order_Srl,
+    //     Orders1.Cust_Code,
+    //     Orders1.DwgName,
+    //     Orders1.Dwg_Code,
+    //     Orders1.Mtrl_Code,
+    //     Orders1.Operation,
+    //     Orders1.Mtrl_Source,
+    //     Orders1.Qty_Ordered,
+    //     Orders1.InspLevel,
+    //     Orders1.PackingLevel,
+    //     Orders1.delivery_date,
+    //     Orders1.JWCost,
+    //     Orders1.MtrlCost,
+    //     Orders1.Dwg,
+    //     Orders1.Tolerance,
+    //     Orders1.HasBOM,
+    //   ]`,
+    //   (err, srldata) => {
+    //     if (err) {
+    //       logger.error(err);
+    //     } else {
+    //     }
+    //   }
+    // );
+  } catch (error) {}
+});
+
 module.exports = ordersRouter;
