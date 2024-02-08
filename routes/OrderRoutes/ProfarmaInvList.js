@@ -156,4 +156,38 @@ ProfarmaInvListRouter.post("/postCreateInvoice", async (req, res, next) => {
   }
 });
 
+ProfarmaInvListRouter.post("/postDeleteInvoice", async (req, res, next) => {
+  // console.log("delete invoice...", req.body);
+  try {
+    misQueryMod(
+      `DELETE FROM magodmis.profarma_main WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
+      (err, deleteMainData) => {
+        if (err) {
+          console.log(err);
+        } else {
+          try {
+            misQueryMod(
+              `DELETE FROM magodmis.profarmadetails WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
+              (err, deleteDetailsData) => {
+                if (err) {
+                  console.log(err);
+                } else {
+                  res.send({
+                    flag: true,
+                    message: "Profarma Invoice Delete",
+                  });
+                }
+              }
+            );
+          } catch (error) {
+            next(error);
+          }
+        }
+      }
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = ProfarmaInvListRouter;
