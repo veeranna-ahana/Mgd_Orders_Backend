@@ -43,15 +43,10 @@ ProfarmaInvListRouter.post("/getProfarmaDetails", async (req, res, next) => {
 });
 
 ProfarmaInvListRouter.post("/postCreateInvoice", async (req, res, next) => {
-  // console.log("postCreateInvoice", req.body);
-
-  // const tt = new Date(req.body.profarmaMainData.OrderDate.split("T")[0]);
-  // console.log("order", tt);
-
   let flag;
   try {
     misQueryMod(
-      `INSERT INTO magodmis.profarma_main (InvType, OrderNo, OrderDate, Cust_Code, Cust_Name, Cust_Address, Cust_Place, Cust_State, Cust_StateId, PIN_Code, DelAddress, GSTNo, PO_No, PO_Date, Status)
+      `INSERT INTO magodmis.profarma_main (InvType, OrderNo, OrderDate, Cust_Code, Cust_Name, Cust_Address, Cust_Place, Cust_State, Cust_StateId, PIN_Code, DelAddress, GSTNo, PO_No, PO_Date, Net_Total, AssessableValue, InvTotal, GrandTotal, Status)
       VALUES ('${req.body.profarmaMainData.InvType}', '${
         req.body.profarmaMainData.OrderNo
       }', '${req.body.profarmaMainData.OrderDate.split("T")[0]}', '${
@@ -66,7 +61,17 @@ ProfarmaInvListRouter.post("/postCreateInvoice", async (req, res, next) => {
         req.body.profarmaMainData.GSTNo
       }', '${req.body.profarmaMainData.PO_No}', '${
         req.body.profarmaMainData.PO_Date.split("T")[0]
-      }', '${req.body.profarmaMainData.Status}')`,
+      }', '${parseFloat(req.body.profarmaMainData.Net_Total).toFixed(
+        2
+      )}', '${parseFloat(req.body.profarmaMainData.AssessableValue).toFixed(
+        2
+      )}', '${parseFloat(req.body.profarmaMainData.InvTotal).toFixed(
+        2
+      )}', '${parseFloat(req.body.profarmaMainData.GrandTotal).toFixed(2)}', '${
+        req.body.profarmaMainData.Status
+      }'
+      
+      )`,
       (err, mainInsertData) => {
         if (err) {
           flag = false;
