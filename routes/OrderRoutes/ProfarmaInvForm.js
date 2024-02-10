@@ -1,6 +1,30 @@
 const ProfarmaInvFormRouter = require("express").Router();
 const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
+ProfarmaInvFormRouter.get("/getTaxData", async (req, res, next) => {
+  try {
+    misQueryMod(
+      `SELECT 
+            *
+        FROM
+            magod_setup.taxdb
+        WHERE
+            UnderGroup NOT LIKE '%INCOMETAX%'
+                AND IGST = 0
+                AND EffectiveTO >= NOW()`,
+      (err, data) => {
+        if (err) {
+          console.log(err);
+        } else {
+          res.send(data);
+        }
+      }
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 ProfarmaInvFormRouter.post("/getProfarmaFormMain", async (req, res, next) => {
   //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
   try {
