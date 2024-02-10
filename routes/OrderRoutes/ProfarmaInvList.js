@@ -4,7 +4,7 @@ const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 ProfarmaInvListRouter.post("/getProfarmaMain", async (req, res, next) => {
   try {
     misQueryMod(
-      `SELECT * FROM magodmis.profarma_main where OrderNo = '${req.body.OrderNo}'`,
+      `SELECT * FROM magodmis.profarma_main where OrderNo = '${req.body.OrderNo}' order by ProfarmaID desc`,
       (err, data) => {
         if (err) {
           console.log(err);
