@@ -202,4 +202,25 @@ ProfarmaInvFormRouter.post("/postSaveInvoice", async (req, res, next) => {
     next(error);
   }
 });
+
+ProfarmaInvFormRouter.post(
+  "/postInvFormCreateInvoice",
+  async (req, res, next) => {
+    //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
+    try {
+      misQueryMod(
+        `UPDATE magodmis.profarma_main SET ProformaInvNo = '${req.body.series}', ProformaDate = now() WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
+        (err, data) => {
+          if (err) {
+            console.log(err);
+          } else {
+            res.send(data);
+          }
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 module.exports = ProfarmaInvFormRouter;

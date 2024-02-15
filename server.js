@@ -41,6 +41,8 @@ const analysisRouter = require("./routes/analysis");
 const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
+// running no
+const runningNoRouter = require("./routes/runningNo");
 const { logger } = require("./helpers/logger");
 
 app.use(cors());
@@ -74,6 +76,7 @@ app.use("/analysis", analysisRouter);
 app.use("/accounts", accountsRouter);
 app.use("/file", fileRouter);
 app.use("/orderList", orderListRouter);
+app.use("/runningNo", runningNoRouter);
 // app.use(fileUpload());
 
 // NEW ODER ROUTES
