@@ -36,6 +36,8 @@ const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
+const ScheduleListRouter=require("./routes/OrderList/ScheduleList");
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -68,6 +70,7 @@ app.use("/analysis", analysisRouter);
 app.use("/accounts", accountsRouter);
 app.use("/file", fileRouter);
 app.use("/orderList", orderListRouter);
+app.use("/ScheduleList", ScheduleListRouter);
 // app.use(fileUpload());
 
 app.use((err, req, res, next) => {

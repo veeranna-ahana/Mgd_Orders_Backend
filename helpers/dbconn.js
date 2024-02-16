@@ -16,7 +16,7 @@ var misConn = mysql.createConnection({
   user: dbUser,
   password: dbPassword,
   database: dbDatabase1,
-  port:3310
+  port:33062
 });
 
 var setupConn = mysql.createConnection({
@@ -24,7 +24,7 @@ var setupConn = mysql.createConnection({
   user: dbUser,
   password: dbPassword,
   database: dbDatabase2,
-  port:3310,
+  port:33062,
   
 });
 
@@ -33,7 +33,7 @@ var qtnConn = mysql.createConnection({
   user: dbUser,
   password: dbPassword,
   database: dbDatabase3,
-  port:3310
+  port:33062
 
 });
 
@@ -42,7 +42,7 @@ var mchConn = mysql.createConnection({
   user: dbUser,
   password: dbPassword,
   database: dbDatabase4,
-  port:3310
+  port:33062
 
 });
 
@@ -51,7 +51,7 @@ var slsConn = mysql.createConnection({
   user: dbUser,
   password: dbPassword,
   database: dbDatabase5,
-  port:3310
+  port:33062
 
 });
 
@@ -60,7 +60,7 @@ var mtrlConn = mysql.createConnection({
   user: dbUser,
   password: dbPassword,
   database: dbDatabase6,
-  port:3310
+  port:33062
 
 });
 
