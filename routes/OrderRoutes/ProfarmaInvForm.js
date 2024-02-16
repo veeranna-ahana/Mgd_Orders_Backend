@@ -29,7 +29,7 @@ ProfarmaInvFormRouter.post("/getProfarmaFormMain", async (req, res, next) => {
   //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
   try {
     misQueryMod(
-      `SELECT * FROM magodmis.profarma_main where ProfarmaID = '${req.body.ProfarmaID}'`,
+      `SELECT *, DATE_FORMAT(ProformaDate, '%d/%m/%Y') AS Printable_ProformaDate FROM magodmis.profarma_main where ProfarmaID = '${req.body.ProfarmaID}'`,
       (err, data) => {
         if (err) {
           console.log(err);
