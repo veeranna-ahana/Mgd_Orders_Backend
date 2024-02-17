@@ -209,7 +209,7 @@ ProfarmaInvFormRouter.post(
     //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
     try {
       misQueryMod(
-        `UPDATE magodmis.profarma_main SET ProformaInvNo = '${req.body.series}', ProformaDate = now() WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
+        `UPDATE magodmis.profarma_main SET ProformaInvNo = '${req.body.series}', ProformaDate = now(), Status='Invoiced' WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
         (err, data) => {
           if (err) {
             console.log(err);
