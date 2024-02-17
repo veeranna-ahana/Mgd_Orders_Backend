@@ -44,6 +44,8 @@ const orderListRouter = require("./routes/OrderList/OrderList");
 // running no
 const runningNoRouter = require("./routes/runningNo");
 const { logger } = require("./helpers/logger");
+const ScheduleListRouter=require("./routes/OrderList/ScheduleList");
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -76,6 +78,7 @@ app.use("/analysis", analysisRouter);
 app.use("/accounts", accountsRouter);
 app.use("/file", fileRouter);
 app.use("/orderList", orderListRouter);
+app.use("/ScheduleList", ScheduleListRouter);
 app.use("/runningNo", runningNoRouter);
 // app.use(fileUpload());
 

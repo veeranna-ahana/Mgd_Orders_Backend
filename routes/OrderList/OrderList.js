@@ -41,6 +41,7 @@ OrderListRouter.post(`/getOrderListByType`, async (req, res, next) => {
     next(error);
   }
 });
+
 OrderListRouter.post(
   `/getOrderListByTypeGroupedCustomer`,
   async (req, res, next) => {
