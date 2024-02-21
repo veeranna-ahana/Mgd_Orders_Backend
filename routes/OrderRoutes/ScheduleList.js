@@ -1,5 +1,5 @@
 const SchduleListRouter = require("express").Router();
-const { misQuery, setupQuery, misQueryMod } = require("../helpers/dbconn");
+const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
 SchduleListRouter.get("/test", async (req, res, next) => {
   console.log("test");

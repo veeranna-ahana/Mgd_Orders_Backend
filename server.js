@@ -9,7 +9,7 @@ const app = express();
 const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
 const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
 const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
-const SchduleListRouter = require("./routes/OrderRoutes/SchduleList");
+const SchduleListRouter = require("./routes/OrderRoutes/ScheduleList");
 
 const userRouter = require("./routes/user");
 const unitRouter = require("./routes/units");
