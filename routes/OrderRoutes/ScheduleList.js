@@ -1,3 +1,4 @@
+const SchduleListRouter = require("express").Router();
 const ScheduleListRouter = require("express").Router();
 const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
