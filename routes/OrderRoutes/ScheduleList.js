@@ -1,3 +1,4 @@
+const SchduleListRouter = require("express").Router();
 const ScheduleListRouter = require("express").Router();
 var createError = require("http-errors");
 
