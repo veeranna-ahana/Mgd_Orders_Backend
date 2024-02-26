@@ -9,8 +9,6 @@ const app = express();
 const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
 const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
 const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
-// const SchduleListRouter = require("./routes/OrderRoutes/ScheduleList");
-// const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
 const ProfarmaInvFormRouter = require("./routes/OrderRoutes/ProfarmaInvForm");
 
 const userRouter = require("./routes/user");
@@ -42,10 +40,12 @@ const analysisRouter = require("./routes/analysis");
 const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
+const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
+const NCprogramRoter=require("./routes/OrderRoutes/NCprogram");
+
 // running no
 const runningNoRouter = require("./routes/runningNo");
 const { logger } = require("./helpers/logger");
-const ScheduleListRouter = require("./routes/OrderList/ScheduleList");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -80,6 +80,7 @@ app.use("/file", fileRouter);
 app.use("/orderList", orderListRouter);
 app.use("/ScheduleList", ScheduleListRouter);
 app.use("/runningNo", runningNoRouter);
+app.use("/NCProgram",NCprogramRoter)
 // app.use(fileUpload());
 
 // NEW ODER ROUTES
