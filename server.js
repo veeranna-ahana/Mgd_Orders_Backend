@@ -10,6 +10,7 @@ const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
 const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
 const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
 const ProfarmaInvFormRouter = require("./routes/OrderRoutes/ProfarmaInvForm");
+const PackingNoteAndInvoiceRouter = require("./routes/OrderRoutes/PackingNoteAndInvoice");
 
 const userRouter = require("./routes/user");
 const unitRouter = require("./routes/units");
@@ -88,6 +89,7 @@ app.use("/orderDetails", OrderDetailsRouter);
 app.use("/productionSchCreation", ProductionSchCreationRouter);
 app.use("/profarmaInvList", ProfarmaInvListRouter);
 // app.use("/scheduleList", ScheduleListRouter);
+app.use("/orderPackingNoteAndInvoice", PackingNoteAndInvoiceRouter);
 app.use("/profarmaInvForm", ProfarmaInvFormRouter);
 
 app.use((err, req, res, next) => {
