@@ -1,4 +1,3 @@
-const SchduleListRouter = require("express").Router();
 const ScheduleListRouter = require("express").Router();
 var createError = require("http-errors");
 
@@ -29,7 +28,6 @@ ScheduleListRouter.post(`/getScheduleListData`, async (req, res, next) => {
 
 //DWG table data
 ScheduleListRouter.post(`/getDwgTableData`, async (req, res, next) => {
-  // console.log("req.body /getDwgTableData is",req.body);
   let query = `SELECT * FROM magodmis.orderscheduledetails o WHERE o.ScheduleId='${req.body.ScheduleId}'`;
 
   try {
@@ -38,6 +36,7 @@ ScheduleListRouter.post(`/getDwgTableData`, async (req, res, next) => {
         console.log("err", err);
       } else {
         res.send(data);
+        // console.log("response is",data);
       }
     });
   } catch (error) {
@@ -48,7 +47,7 @@ ScheduleListRouter.post(`/getDwgTableData`, async (req, res, next) => {
 //Task and  Material List
 ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
   // console.log("req.body /getTaskandMterial is",req.body);
-  let query = `SELECT * FROM magodmis.nc_task_list where NcTaskId='${req.body.scheduleDetailsRow.NcTaskId}';
+  let query = `SELECT * FROM magodmis.nc_task_list where ScheduleID='${req.body.scheduleDetailsRow.ScheduleId}';
     `;
 
   try {
@@ -69,7 +68,6 @@ ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
 ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
   // console.log("req.body /getTaskandMterial is",req.body);
   let query = `SELECT o.*, c.Cust_name  FROM magodmis.orderschedule AS o JOIN magodmis.cust_data AS c  ON o.Cust_Code = c.Cust_Code WHERE o.Cust_Code = '${req.body.Cust_Code}' AND o.ScheduleId = '${req.body.ScheduleId}'`;
-
   try {
     misQueryMod(query, (err, data) => {
       if (err) {
@@ -146,12 +144,10 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
           const schedule = data[0]; // Assuming only one schedule is returned
 
           if (schedule.Suspend === 1) {
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Clear Order Suspension of the order before trying to clear it for schedule",
-              });
+            return res.status(400).json({
+              message:
+                "Clear Order Suspension of the order before trying to clear it for schedule",
+            });
           } else if (schedule.Schedule_Status === "Suspended") {
             const updateQuery = `UPDATE magodmis.orderscheduledetails o,
                             (SELECT  CASE
@@ -218,11 +214,9 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
                       .status(500)
                       .json({ error: "Internal Server Error" });
                   } else {
-                    return res
-                      .status(200)
-                      .json({
-                        message: "Schedule status updated successfully",
-                      });
+                    return res.status(200).json({
+                      message: "Schedule status updated successfully",
+                    });
                   }
                 });
               }
@@ -257,7 +251,7 @@ ScheduleListRouter.post(`/shortClose`, async (req, res, next) => {
             detail.QtyProduced === detail.QtyDelivered + detail.QtyRejected
         );
         // console.log("isValid", isValid);
-        
+
         if (isValid) {
           try {
             // Execute update queries
@@ -283,7 +277,7 @@ ScheduleListRouter.post(`/shortClose`, async (req, res, next) => {
                             next(err); // Pass the error to the error handling middleware
                           } else {
                             res.json({ message: "Success" });
-                        }
+                          }
                         }
                       );
                     }
@@ -296,7 +290,10 @@ ScheduleListRouter.post(`/shortClose`, async (req, res, next) => {
           }
         } else {
           // Send response indicating the condition is not met
-          res.json({message: "Either all quantity produced must be dispatched or balance quantity must be recorded as 'Rejected'"});
+          res.json({
+            message:
+              "Either all quantity produced must be dispatched or balance quantity must be recorded as 'Rejected'",
+          });
         }
       }
     });
@@ -334,8 +331,6 @@ function updateNCTaskList(scheduleDetailsRow, callback) {
     `;
   misQueryMod(query, callback);
 }
-
-
 
 //Onclick of Button Task
 ScheduleListRouter.post(`/taskOnclick`, async (req, res, next) => {
@@ -401,11 +396,9 @@ ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
                               .status(500)
                               .json({ error: "Internal Server Error" });
                           } else {
-                            return res
-                              .status(200)
-                              .json({
-                                message: "Schedules cancelled successfully",
-                              });
+                            return res.status(200).json({
+                              message: "Schedules cancelled successfully",
+                            });
                           }
                         });
                       }
@@ -434,14 +427,11 @@ ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
 
 //Schedule Button
 ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
-  // Assuming req.body.formdata[0].ScheduleNo is the date string '2021-07-09T18:30:00.000Z'
   const originalDate = new Date(req.body.formdata[0].schTgtDate);
   const formattedDate = originalDate
     .toISOString()
     .slice(0, 19)
     .replace("T", " ");
-
-  // console.log("formattedDate",formattedDate);
 
   try {
     let querySalesOverdue = `SELECT count(d.DC_Inv_No) AS SalesOverdueCount 
@@ -492,7 +482,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 
                     let updateQuery1 = `UPDATE order_details SET QtyScheduled=QtyScheduled+'${req.body.scheduleDetailsRow.QtyScheduled}' WHERE OrderDetailID='${req.body.scheduleDetailsRow.OrderDetailID}'`;
 
-                    let updateQuery2 = `UPDATE orderschedule SET ScheduleNo='${req.body.formdata[0].ScheduleNo}', Schedule_status='Scheduled', 
+                    let updateQuery2 = `UPDATE orderschedule SET ScheduleNo='${req.body.formdata[0].ScheduleNo}', Schedule_status='Tasked', 
                                         schTgtDate='${formattedDate}', ScheduleDate=now(),ordschno='${req.body.formdata[0].OrdSchNo}' 
                                         WHERE ScheduleID='${req.body.formdata[0].ScheduleId}'`;
 
@@ -562,79 +552,187 @@ ScheduleListRouter.get(`/getSalesContact`, async (req, res, next) => {
   }
 });
 
-//OnClick of Performance 
+//OnClick of Performance
 ScheduleListRouter.post(`/onClickPerformce`, async (req, res, next) => {
-    try {
-        // Execute the first query
-        executeFirstQuery((err, data) => {
-            if (err) {
-                console.log("err", err);
-                next(err); // Pass the error to the error handling middleware
-            } else {
-                // Execute the second query
-                executeSecondQuery((err, data1) => {
-                    if (err) {
-                        console.log("err", err);
-                        next(err); // Pass the error to the error handling middleware
-                    } else {
-                        res.send({ queryResult1: data, queryResult2: data1 }); // Send both query results as response
-                    }
-                });
-            }
-        });
-    } catch (error) {
-        next(error); // Pass any uncaught errors to the error handling middleware
-    }
-});
-// Function to execute the first query
-function executeFirstQuery(callback) {
-    const query = `
-        SELECT 
-            n.NcTaskId, 
-            n.TaskNo,
-            SUM(d1.Qty * d1.JW_Rate) as JWValue, 
-            SUM(d1.Qty * d1.Mtrl_rate) as MaterialValue, 
-            n.TaskNo, 
-            n.Mtrl_Code, 
-            n.MTRL, 
-            n.Thickness, 
-            n.Operation,
-            SUM(d1.Qty * o.LOC) as TotalLOC, 
-            SUM(d1.Qty * o.Holes) as TotalHoles
-        FROM 
-            magodmis.draft_dc_inv_register d,
-            magodmis.draft_dc_inv_details d1,
-            magodmis.orderscheduledetails o,
-            magodmis.nc_task_list n
-        WHERE 
-            d.ScheduleId = @ScheduleId 
-            AND d1.DC_Inv_No = d.DC_Inv_No 
-            AND o.SchDetailsID = d1.OrderSchDetailsID
-            AND n.NcTaskId = o.NcTaskId  
-        GROUP BY 
-            n.NcTaskId;
-    `;
+  try {
+    const scheduleId = req.body.formdata[0].ScheduleId;
+
     // Execute the first query
-    misQueryMod(query, callback);
+    executeFirstQuery(scheduleId, (err, data) => {
+      if (err) {
+        console.log("err", err);
+        return next(err); // Pass the error to the error handling middleware
+      }
+      // Execute the second query
+      executeSecondQuery(scheduleId, (err, data1) => {
+        if (err) {
+          console.log("err", err);
+          return next(err); // Pass the error to the error handling middleware
+        }
+
+        // Create a map of NcTaskId to MachineTime
+        const machineTimeMap = {};
+        data1.forEach((row) => {
+          machineTimeMap[row.NcTaskId] = row.MachineTime;
+        });
+
+        // Calculate HourRate and TargetHourRate for each row in data
+        data.forEach((row) => {
+          const machineTime = machineTimeMap[row.NcTaskId];
+          if (machineTime !== undefined) {
+            row.MachineTime = machineTime;
+            row.HourRate = row.JWValue / machineTime;
+            row.TargetHourRate = row.MaterialValue / machineTime;
+          } else {
+            row.MachineTime = "Not Processed";
+            row.HourRate = "Not Invoiced";
+            row.TargetHourRate = "Not Invoiced";
+          }
+        });
+
+        res.send(data); // Send the resulting data array as response
+      });
+    });
+  } catch (error) {
+    next(error); // Pass any uncaught errors to the error handling middleware
+  }
+});
+
+// Function to execute the first query
+function executeFirstQuery(scheduleId, callback) {
+  const query = `
+    SELECT 
+      n.NcTaskId, 
+      n.TaskNo,
+      SUM(d1.Qty * d1.JW_Rate) as JWValue, 
+      SUM(d1.Qty * d1.Mtrl_rate) as MaterialValue, 
+      n.TaskNo, 
+      n.Mtrl_Code, 
+      n.MTRL, 
+      n.Thickness, 
+      n.Operation,
+      SUM(d1.Qty * o.LOC) as TotalLOC, 
+      SUM(d1.Qty * o.Holes) as TotalHoles
+    FROM 
+      magodmis.draft_dc_inv_register d,
+      magodmis.draft_dc_inv_details d1,
+      magodmis.orderscheduledetails o,
+      magodmis.nc_task_list n
+    WHERE 
+      d.ScheduleId = '${scheduleId}'
+      AND d1.DC_Inv_No = d.DC_Inv_No 
+      AND o.SchDetailsID = d1.OrderSchDetailsID
+      AND n.NcTaskId = o.NcTaskId  
+    GROUP BY 
+      n.NcTaskId;
+  `;
+  // Execute the first query
+  misQueryMod(query, callback);
 }
 
 // Function to execute the second query
-function executeSecondQuery(callback) {
-    const query = `
-        SELECT 
-            s.*, 
-            n.NcTaskId 
-        FROM 
-            magodmis.nc_task_list n,
-            magodmis.ncprograms n1,
-            magodmis.shiftlogbook s 
-        WHERE  
-            n.NcTaskId = n1.NcTaskId 
-            AND n.ScheduleID = @ScheduleID 
-            AND s.StoppageID = n1.Ncid;
-    `;
-    // Execute the second query
-    misQueryMod(query, callback);
+function executeSecondQuery(scheduleId, callback) {
+  const query = `
+    SELECT 
+      n.NcTaskId,
+      SUM(TIMESTAMPDIFF(MINUTE, s.FromTime, s.ToTime)) / 60 as MachineTime
+    FROM 
+      magodmis.nc_task_list n,
+      magodmis.ncprograms n1,
+      magodmis.shiftlogbook s
+    WHERE  
+      n.NcTaskId = n1.NcTaskId 
+      AND n.ScheduleID = '${scheduleId}'
+      AND s.StoppageID = n1.Ncid
+    GROUP BY 
+      n.NcTaskId;
+  `;
+  // Execute the second query
+  misQueryMod(query, callback);
 }
+
+//Fixture Order
+ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
+  // console.log("req.body",req.body)
+  // Assuming req.body.formdata[0].Delivery_Date is a Date object or a string representing a date
+const deliveryDate = new Date(req.body.formdata[0].Delivery_Date);
+const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  try {
+    // Check if there are any existing orders matching the conditions
+    let checkExistingQuery = `SELECT * FROM magodmis.order_list i WHERE i.ScheduleId ='${req.body.formdata[0].ScheduleId}' AND i.\`Order-Ref\`='Fixture'`;
+    misQueryMod(checkExistingQuery, (err, existingData) => {
+      if (err) {
+        console.log("Error checking existing orders:", err);
+        return res.status(500).send("Error checking existing orders");
+      }
+      console.log("existingData",existingData.length);
+
+      if (existingData.length === 0) {
+        console.log("excuting Inset")
+        // Fetch current Running_No
+        let getrunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='internalFixture'`;
+        misQueryMod(getrunningNoQuery, (err, runningNoData) => {
+          if (err) {
+            console.log("Error fetching Running_No:", err);
+            return res.status(500).send("Error fetching Running_No");
+          }
+
+          // Increment the current Running_No to get nextSrl
+          const nextSrl = parseInt(runningNoData[0].Running_No) + 1;
+
+          // Update magod_runningno table with the new nextSrl
+          let updateRunningNoQuery = `UPDATE magod_setup.magod_runningno SET Running_No=${nextSrl} WHERE Id=33`;
+          misQueryMod(updateRunningNoQuery, (err, updateResult) => {
+            if (err) {
+              console.log("Error updating Running_No:", err);
+              return res.status(500).send("Error updating Running_No");
+            }
+
+            // Prepare and execute the INSERT INTO query with nextSrl
+            let insertQuery = `INSERT INTO magodmis.order_list(order_no,order_date ,cust_code ,contact_name ,Type, 
+              delivery_date , purchase_order , order_received_by, salescontact, recordedby, dealing_engineer ,
+               order_status , special_instructions ,payment , ordervalue , materialvalue , billing_address , delivery , del_place ,
+               del_mode , \`Order-Ref\`, order_type , register ,qtnno,ScheduleId) VALUES (${nextSrl},now(),'${req.body.formdata[0].Cust_Code}','${req.body.formdata[0].Dealing_Engineer}','Profile','${formattedDeliveryDate}','${req.body.formdata[0].PO}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].SalesContact}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Dealing_Engineer}','Recorded','${req.body.formdata[0].Special_Instructions}','ByOrder','0','0','Magod Laser','0','Shop Floor','By Hand','Fixture','Scheduled','0','None','${req.body.formdata[0].ScheduleId}')`;
+            misQueryMod(insertQuery, (err, insertResult) => {
+              if (err) {
+                console.log("Error inserting order:", err);
+                return res.status(500).send("Error inserting order");
+              }
+
+              // Send the response
+              res.send(insertResult);
+            });
+          });
+        });
+      } else {
+        // If existing orders are found, send the query result as the response
+        res.send(existingData);
+      }
+    });
+  } catch (error) {
+    console.log("Error:", error);
+    next(error);
+  }
+});
+
+///DELETE SCHEDULE
+ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
+  console.log(req.body.rowScheduleList.ScheduleId,"delete");
+  // console.log("req.body /getTaskandMterial is",req.body);
+  let query = `Delete  FROM magodmis.orderschedule where ScheduleId='${req.body.rowScheduleList.ScheduleId}'`;
+
+  try {
+    misQueryMod(query, (err, data) => {
+      if (err) {
+        console.log("err", err);
+      } else {
+        res.status(200).json({message:"Successfully Deleted"});
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 module.exports = ScheduleListRouter;
