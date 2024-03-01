@@ -396,36 +396,67 @@ OrderDetailsRouter.post(`/LoadArrival2`, async (req, res, next) => {
   } catch (error) {}
 });
 
-OrderDetailsRouter.post(`/getQtnData`, async (req, res, next) => {
+OrderDetailsRouter.post(`/getQtnList`, async (req, res, next) => {
   try {
-    qtnQueryMod(`SELECT * FROM magodqtn.qtnlist`, (err, qtnList) => {
-      if (err) {
-        res.status(500).send("Internal Server Error");
-      } else {
-        try {
-          qtnQueryMod(
-            `SELECT 
-                    *
-                FROM
-                    magodqtn.qtn_itemslist
-                        INNER JOIN
-                    magodqtn.qtnlist ON magodqtn.qtnlist.QtnID = magodqtn.qtn_itemslist.QtnId`,
-            (err, qtnItemList) => {
-              if (err) {
-                res.status(500).send("Internal Server Error");
-              } else {
-                res.send({
-                  qtnList: qtnList,
-                  qtnItemList: qtnItemList,
-                });
-              }
-            }
-          );
-        } catch (error) {
-          next(error);
+    qtnQueryMod(
+      `SELECT *, DATE_FORMAT(ValidUpTo, '%d/%m/%Y') AS Printable_ValidUpTo FROM magodqtn.qtnlist ORDER BY QtnID DESC`,
+      (err, qtnList) => {
+        if (err) {
+          res.status(500).send("Internal Server Error");
+        } else {
+          res.send({ qtnList: qtnList });
+          // try {
+          //   qtnQueryMod(
+          //     `SELECT
+          //           *
+          //       FROM
+          //           magodqtn.qtn_itemslist
+          //               INNER JOIN
+          //           magodqtn.qtnlist ON magodqtn.qtnlist.QtnID = magodqtn.qtn_itemslist.QtnId`,
+          //     (err, qtnItemList) => {
+          //       if (err) {
+          //         res.status(500).send("Internal Server Error");
+          //       } else {
+          //         res.send({
+          //           qtnList: qtnList,
+          //           qtnItemList: qtnItemList,
+          //         });
+          //       }
+          //     }
+          //   );
+          // } catch (error) {
+          //   next(error);
+          // }
         }
       }
-    });
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+OrderDetailsRouter.post(`/getQtnDataByQtnID`, async (req, res, next) => {
+  // console.log("req.body", req.body);
+  try {
+    qtnQueryMod(
+      `SELECT 
+            *
+        FROM
+            magodqtn.qtn_itemslist
+        WHERE
+            magodqtn.qtn_itemslist.QtnId = '${req.body.qtnId}'
+        ORDER BY magodqtn.qtn_itemslist.ID DESC`,
+      (err, qtnItemList) => {
+        if (err) {
+          res.status(500).send("Internal Server Error");
+        } else {
+          // console.log("qtnItemList", qtnItemList);
+          res.send({
+            qtnItemList: qtnItemList,
+          });
+        }
+      }
+    );
   } catch (error) {
     next(error);
   }
