@@ -423,24 +423,20 @@ ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
   ////console.log("req", req.body);
 
   try {
-    try {
-      misQueryMod(
-        `SELECT 
+    misQueryMod(
+      `SELECT 
                 * 
               FROM
                   magodmis.order_details
                       
               WHERE
                   Order_No = '${req.body.OrderNo}'`,
-        async (err, srldata) => {
-          if (err) logger.error(err);
-          ////console.log("srldata", srldata);
-          res.send(srldata);
-        }
-      );
-    } catch (error) {
-      next(error);
-    }
+      (err, srldata) => {
+        if (err) logger.error(err);
+        ////console.log("srldata", srldata);
+        res.send(srldata);
+      }
+    );
   } catch (error) {
     next(error);
   }

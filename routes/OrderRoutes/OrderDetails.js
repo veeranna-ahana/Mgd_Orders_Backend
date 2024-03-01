@@ -4,7 +4,7 @@ const { logger } = require("../../helpers/logger");
 
 OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
   // console.log("entering into insertnewsrldata");
-  // console.log("req", req.body);
+  console.log("req", req.body);
   // console.log("req", req.body.requestData.OrderNo);
   try {
     misQueryMod(
@@ -14,43 +14,43 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
           logger.error(err);
         } else {
           // ////console.log("data1...", data1);
-          let OrderNo = req.body.requestData.OrderNo;
-          console.log("OrderNo", OrderNo);
+          // let OrderNo = req.body.requestData.OrderNo;
+          // console.log("OrderNo", OrderNo);
 
-          let newOrderSrl = req.body.requestData.newOrderSrl;
-          console.log("newOrderSrl", newOrderSrl);
+          // let newOrderSrl = req.body.requestData.newOrderSrl;
+          // console.log("newOrderSrl", newOrderSrl);
 
-          let DwgName = req.body.requestData.DwgName;
-          console.log("DwgName", DwgName);
-          let Dwg_Code = req.body.requestData.Dwg_Code;
-          console.log("Dwg_Code", Dwg_Code);
+          // let DwgName = req.body.requestData.DwgName;
+          // console.log("DwgName", DwgName);
+          // let Dwg_Code = req.body.requestData.Dwg_Code;
+          // console.log("Dwg_Code", Dwg_Code);
 
-          let strmtrlcode = req.body.requestData.strmtrlcode;
-          console.log("strmtrlcode", strmtrlcode);
+          // let strmtrlcode = req.body.requestData.strmtrlcode;
+          // console.log("strmtrlcode", strmtrlcode);
 
-          let custcode = req.body.requestData.custcode;
-          console.log("custcode", custcode);
+          // let custcode = req.body.requestData.custcode;
+          // console.log("custcode", custcode);
 
-          let operation = req.body.requestData.Operation;
-          console.log("operation", operation);
-          let Qty_Ordered = req.body.requestData.Qty_Ordered;
-          console.log("Qty_Ordered", Qty_Ordered);
-          let JwCost = req.body.requestData.JwCost;
-          console.log("JwCost", JwCost);
-          let mtrlcost = req.body.requestData.mtrlcost;
-          console.log("mtrlcost", mtrlcost);
-          let MtrlSrc = req.body.requestData.NewSrlFormData.MtrlSrc;
-          console.log("MtrlSrc", MtrlSrc);
-          let InspLvl = req.body.requestData.NewSrlFormData.InspLvl;
-          console.log("InspLvl", InspLvl);
-          let PkngLvl = req.body.requestData.NewSrlFormData.PkngLvl;
-          console.log("PkngLvl", PkngLvl);
-          let dwg = req.body.requestData.dwg;
-          console.log("dwg", dwg);
-          let tolerance = req.body.requestData.tolerance;
-          console.log("tolerance", tolerance);
-          let HasBOM = req.body.requestData.HasBOM;
-          console.log("HasBOM", HasBOM);
+          // let operation = req.body.requestData.Operation;
+          // console.log("operation", operation);
+          // let Qty_Ordered = req.body.requestData.Qty_Ordered;
+          // console.log("Qty_Ordered", Qty_Ordered);
+          // let JwCost = req.body.requestData.JwCost;
+          // console.log("JwCost", JwCost);
+          // let mtrlcost = req.body.requestData.mtrlcost;
+          // console.log("mtrlcost", mtrlcost);
+          // let MtrlSrc = req.body.requestData.NewSrlFormData.MtrlSrc;
+          // console.log("MtrlSrc", MtrlSrc);
+          // let InspLvl = req.body.requestData.NewSrlFormData.InspLvl;
+          // console.log("InspLvl", InspLvl);
+          // let PkngLvl = req.body.requestData.NewSrlFormData.PkngLvl;
+          // console.log("PkngLvl", PkngLvl);
+          // let dwg = req.body.requestData.dwg;
+          // console.log("dwg", dwg);
+          // let tolerance = req.body.requestData.tolerance;
+          // console.log("tolerance", tolerance);
+          // let HasBOM = req.body.requestData.HasBOM;
+          // console.log("HasBOM", HasBOM);
 
           try {
             misQueryMod(
@@ -73,23 +73,23 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
              HasBOM
 
               ) VALUES (
-                ${OrderNo},
-                ${newOrderSrl},
-                ${custcode},
-                '${DwgName}',
-                '${Dwg_Code}',
-                '${strmtrlcode}',
-                '${operation}',
-                '${MtrlSrc}',
-                ${parseInt(Qty_Ordered)},
-                '${InspLvl}',
-                '${PkngLvl}',
+                ${req.body.requestData.OrderNo},
+                ${req.body.requestData.newOrderSrl},
+                ${req.body.requestData.custcode},
+                '${req.body.requestData.DwgName}',
+                '${req.body.requestData.Dwg_Code}',
+                '${req.body.requestData.strmtrlcode}',
+                '${req.body.requestData.Operation}',
+                '${req.body.requestData.NewSrlFormData.MtrlSrc}',
+                ${parseInt(req.body.requestData.Qty_Ordered)},
+                '${req.body.requestData.NewSrlFormData.InspLvl}',
+                '${req.body.requestData.NewSrlFormData.PkngLvl}',
 
-                ${parseFloat(JwCost)},
-                ${parseFloat(mtrlcost)},
-                ${dwg},
-                '${tolerance}',
-                ${HasBOM}
+                ${parseFloat(req.body.requestData.JwCost)},
+                ${parseFloat(req.body.requestData.mtrlcost)},
+                ${req.body.requestData.dwg},
+                '${req.body.requestData.tolerance}',
+                ${req.body.requestData.HasBOM}
 
               )`,
               (err, srldata) => {
