@@ -1,5 +1,10 @@
 const OrderDetailsRouter = require("express").Router();
-const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
+const {
+  misQuery,
+  setupQuery,
+  misQueryMod,
+  qtnQueryMod,
+} = require("../../helpers/dbconn");
 const { logger } = require("../../helpers/logger");
 
 OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
@@ -389,5 +394,40 @@ OrderDetailsRouter.post(`/LoadArrival2`, async (req, res, next) => {
       }
     );
   } catch (error) {}
+});
+
+OrderDetailsRouter.post(`/getQtnData`, async (req, res, next) => {
+  try {
+    qtnQueryMod(`SELECT * FROM magodqtn.qtnlist`, (err, qtnList) => {
+      if (err) {
+        res.status(500).send("Internal Server Error");
+      } else {
+        try {
+          qtnQueryMod(
+            `SELECT 
+                    *
+                FROM
+                    magodqtn.qtn_itemslist
+                        INNER JOIN
+                    magodqtn.qtnlist ON magodqtn.qtnlist.QtnID = magodqtn.qtn_itemslist.QtnId`,
+            (err, qtnItemList) => {
+              if (err) {
+                res.status(500).send("Internal Server Error");
+              } else {
+                res.send({
+                  qtnList: qtnList,
+                  qtnItemList: qtnItemList,
+                });
+              }
+            }
+          );
+        } catch (error) {
+          next(error);
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 module.exports = OrderDetailsRouter;
