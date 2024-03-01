@@ -10,7 +10,6 @@ ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
       .replace(/\.\d{3}Z$/, "");
     
     let query = `select * from magodmis.order_details where Order_No= '${req.body.OrderData.Order_No}'`;
-    
     try {
       misQueryMod(query, (err, data) => {
         if (err) {
@@ -18,8 +17,8 @@ ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
           return res.status(500).json({ message: "Error occurred while fetching order details" });
         } else {
           const count = data.length;
-          console.log("req.body.scheduleType",req.body.scheduleType)
-          if ((req.body.scheduleOption===' Full Order'  && count === req.body.selectedItems.length) || req.body.scheduleOption==='Partial Order') {
+          console.log("req.body.scheduleOption",req.body.scheduleOption)
+          if ((req.body.scheduleOption==='Full Order'  && count === req.body.selectedItems.length) || req.body.scheduleOption==='Partial Order') {
             let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
                       SalesContact, Dealing_Engineer, ScheduleType, Type, Internal, Schedule_Status) 
                       VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),'${formattedDeliveryDate}', '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created')`;
@@ -39,7 +38,7 @@ ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
                                         '${selectedItem.Mtrl_Source}','${selectedItem.PackingLevel}', '${selectedItem.InspLevel}','${selectedItem.QtyScheduled}','${selectedItem.tolerance}','${selectedItem.JWCost}','${selectedItem.MtrlCost}','${selectedItem.HasBOM}')`;
                   misQuery(inserquery2, (err2, finalresponse) => {
                     if (err2) {
-                      console.log("Error inserting into orderscheduledetails:", err2);
+                      // console.log("Error inserting into orderscheduledetails:", err2);
                       // No need to return a response here, as the insertion is part of a loop
                       // Simply log the error and continue with the next iteration
                     } else {
