@@ -1,29 +1,124 @@
 const ProfarmaInvFormRouter = require("express").Router();
 const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
-ProfarmaInvFormRouter.get("/getTaxData", async (req, res, next) => {
+ProfarmaInvFormRouter.post("/getTaxData", async (req, res, next) => {
+  // get the cust details
   try {
     misQueryMod(
-      `SELECT 
-            *
-        FROM
-            magod_setup.taxdb
-        WHERE
-            UnderGroup NOT LIKE '%INCOMETAX%'
-                AND IGST = 0
-                AND EffectiveTO >= NOW()`,
-      (err, data) => {
+      `SELECT * FROM magodmis.cust_data where Cust_Code =${req.body.Cust_Code}`,
+      (err, custData) => {
         if (err) {
-          console.log(err);
+          logger.error(err);
         } else {
-          res.send(data);
+          // console.log("Cust_Code", req.body);
+          // console.log("custData[0].StateId", custData[0].StateId);
+          let query = "";
+          // console.log("custData", custData[0]);
+          if (custData[0].IsGovtOrg) {
+            // console.log("IsGovtOrg");
+            query = `SELECT 
+                          *
+                      FROM
+                          magod_setup.taxdb
+                      WHERE
+                          EffectiveTO >= NOW() AND TaxID IS NULL`;
+          } else if (custData[0].IsForiegn) {
+            // console.log("IsForiegn");
+            query = `SELECT 
+                          *
+                      FROM
+                          magod_setup.taxdb
+                      WHERE
+                          EffectiveTO >= NOW() AND IGST != 0 
+                      ORDER BY TaxName DESC
+                          `;
+          } else if (
+            custData[0].GSTNo === null ||
+            custData[0].GSTNo === undefined ||
+            custData[0].GSTNo === "null" ||
+            custData[0].GSTNo === "" ||
+            custData[0].GSTNo.length === 0
+          ) {
+            // console.log("GSTNo");
+            query = `SELECT 
+                          *
+                      FROM
+                          magod_setup.taxdb
+                      WHERE
+                          EffectiveTO >= NOW() AND IGST = 0
+                              AND UnderGroup != 'INCOMETAX'`;
+          } else if (
+            parseInt(req.body.unitStateID) != parseInt(custData[0].StateId)
+          ) {
+            // console.log("unitStateID");
+            query = `SELECT 
+                          *
+                      FROM
+                          magod_setup.taxdb
+                      WHERE
+                          EffectiveTO >= NOW() AND IGST != 0
+                              AND UnderGroup != 'INCOMETAX'`;
+          } else if (req.body.unitGST === custData[0].GSTNo) {
+            // console.log("unitGST");
+            query = `SELECT 
+                          *
+                      FROM
+                          magod_setup.taxdb
+                      WHERE
+                          EffectiveTO >= NOW() AND TaxID IS NULL`;
+          } else {
+            // console.log("else");
+            query = `SELECT 
+                          *
+                      FROM
+                          magod_setup.taxdb
+                      WHERE
+                          EffectiveTO >= NOW() AND IGST = 0
+                              AND UnderGroup != 'INCOMETAX'`;
+          }
+
+          try {
+            misQueryMod(query, (err, data) => {
+              if (err) logger.error(err);
+              res.send(data);
+              // console.log("data", data);
+              // console.log("query", query);
+            });
+          } catch (error) {
+            next(error);
+          }
         }
+        // res.send(data);
       }
     );
   } catch (error) {
     next(error);
   }
 });
+
+// ProfarmaInvFormRouter.get("/getTaxData", async (req, res, next) => {
+//   try {
+//     misQueryMod(
+//       `SELECT
+//             *
+//         FROM
+//             magod_setup.taxdb
+//         WHERE
+//             UnderGroup NOT LIKE '%INCOMETAX%'
+//                 AND IGST = 0
+//                 AND EffectiveTO >= NOW()`,
+//       (err, data) => {
+//         if (err) {
+//           console.log(err);
+//         } else {
+//           res.send(data);
+//         }
+//       }
+//     );
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 ProfarmaInvFormRouter.post("/getProfarmaFormMain", async (req, res, next) => {
   //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
