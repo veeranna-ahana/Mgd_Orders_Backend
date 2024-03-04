@@ -17,49 +17,49 @@ const dbDatabase6 = process.env.DB_DATABASE_6; //magod_mtrl
 var misConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase1,
-  port: dbPort,
 });
 
 var setupConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase2,
-  port: dbPort,
 });
 
 var qtnConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase3,
-  port: dbPort,
 });
 
 var mchConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase4,
-  port: dbPort,
 });
 
 var slsConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase5,
-  port: dbPort,
 });
 
 var mtrlConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase6,
-  port: dbPort,
 });
 
 let misQuery = async (q, callback) => {

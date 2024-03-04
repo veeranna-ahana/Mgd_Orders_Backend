@@ -423,27 +423,40 @@ ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
   ////console.log("req", req.body);
 
   try {
-    try {
-      misQueryMod(
-        `SELECT 
+    misQueryMod(
+      `SELECT 
                 * 
               FROM
                   magodmis.order_details
                       
               WHERE
                   Order_No = '${req.body.OrderNo}'`,
-        async (err, srldata) => {
-          if (err) logger.error(err);
-          ////console.log("srldata", srldata);
-          res.send(srldata);
-        }
-      );
-    } catch (error) {
-      next(error);
-    }
+      (err, srldata) => {
+        if (err) logger.error(err);
+        ////console.log("srldata", srldata);
+        res.send(srldata);
+      }
+    );
   } catch (error) {
     next(error);
   }
 });
 
+ordersRouter.post("/registerOrder", async (req, res, next) => {
+  try {
+    misQueryMod(
+      `UPDATE magodmis.order_list SET Order_Status = '${req.body.Order_Status}' WHERE (Order_No = '${req.body.Order_No}')`,
+      (err, data) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("data", data);
+          res.send(data);
+        }
+      }
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 module.exports = ordersRouter;
