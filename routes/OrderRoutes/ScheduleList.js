@@ -66,7 +66,7 @@ ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
 
 ///get Form Values in Order Schedule Details
 ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
-  console.log("req.body /getTaskandMterial is",req.body);
+  // console.log("req.body /getTaskandMterial is",req.body);
   let query = `SELECT o.*, c.Cust_name  FROM magodmis.orderschedule AS o JOIN magodmis.cust_data AS c  ON o.Cust_Code = c.Cust_Code WHERE o.Cust_Code = '${req.body.Cust_Code}' AND o.ScheduleId = '${req.body.ScheduleId}'`;
   try {
     misQueryMod(query, (err, data) => {
