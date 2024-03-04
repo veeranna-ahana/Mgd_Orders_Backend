@@ -442,4 +442,21 @@ ordersRouter.post(`/postnewsrldata`, async (req, res, next) => {
   }
 });
 
+ordersRouter.post("/registerOrder", async (req, res, next) => {
+  try {
+    misQueryMod(
+      `UPDATE magodmis.order_list SET Order_Status = '${req.body.Order_Status}' WHERE (Order_No = '${req.body.Order_No}')`,
+      (err, data) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("data", data);
+          res.send(data);
+        }
+      }
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 module.exports = ordersRouter;
