@@ -461,4 +461,70 @@ OrderDetailsRouter.post(`/getQtnDataByQtnID`, async (req, res, next) => {
     next(error);
   }
 });
+
+OrderDetailsRouter.post(
+  `/postDeleteDetailsByOrderNo`,
+  async (req, res, next) => {
+    // console.log("req.body", req.body.Order_No);
+    try {
+      misQueryMod(
+        `DELETE FROM magodmis.order_details WHERE (Order_No = '${req.body.Order_No}')`,
+        (err, deleteOrderData) => {
+          if (err) {
+            res.status(500).send("Internal Server Error");
+          } else {
+            // console.log("deleteOrderData", deleteOrderData);
+            res.send(deleteOrderData);
+          }
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+OrderDetailsRouter.post(
+  `/postDetailsDataInImportQtn`,
+  async (req, res, next) => {
+    // console.log("req.body", req.body);
+
+    for (let i = 0; i < req.body.detailsData.length; i++) {
+      const element = req.body.detailsData[i];
+      try {
+        misQueryMod(
+          `INSERT INTO magodmis.order_details (Order_No, Order_Srl, Cust_Code, DwgName, Mtrl_Code, MProcess,  Mtrl_Source, Qty_Ordered, InspLevel, PackingLevel, UnitPrice, UnitWt, Order_Status, JWCost, MtrlCost, Operation, tolerance)
+          VALUES ('${element.Order_No}', '${element.Order_Srl}', '${
+            element.Cust_Code
+          }', '${element.DwgName || ""}', '${element.Mtrl_Code || ""}', '${
+            element.MProcess || ""
+          }', '${element.Mtrl_Source || ""}', '${parseInt(
+            element.Qty_Ordered || 0
+          )}', '${element.InspLevel || "Insp1"}', '${
+            element.PackingLevel || "Pkng1"
+          }', '${parseFloat(element.UnitPrice || 0).toFixed(2)}', '${parseFloat(
+            element.UnitWt || 0
+          ).toFixed(3)}', '${
+            element.Order_Status || "Received"
+          }', '${parseFloat(element.JWCost || 0).toFixed(2)}', '${parseFloat(
+            element.MtrlCost || 0
+          ).toFixed(2)}', '${element.Operation || ""}', '${
+            element.tolerance || ""
+          }')`,
+          (err, deleteOrderData) => {
+            if (err) {
+              res.status(500).send("Internal Server Error");
+            } else {
+              // console.log("deleteOrderData", deleteOrderData);
+            }
+          }
+        );
+      } catch (error) {
+        next(error);
+      }
+    }
+
+    res.send({ result: true });
+  }
+);
 module.exports = OrderDetailsRouter;
