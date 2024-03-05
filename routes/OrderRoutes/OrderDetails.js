@@ -527,4 +527,39 @@ OrderDetailsRouter.post(
     res.send({ result: true });
   }
 );
+OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
+  try {
+    const updateQuery = `
+      UPDATE magodmis.order_details SET
+        Order_No = ${req.body.requestData.OrderNo},
+        Order_Srl = ${req.body.requestData.newOrderSrl},
+        Cust_Code = ${req.body.requestData.custcode},
+        DwgName = '${req.body.requestData.DwgName}',
+        Dwg_Code = '${req.body.requestData.Dwg_Code}',
+        mtrl_code = '${req.body.requestData.strmtrlcode}',
+        Operation = '${req.body.requestData.Operation}',
+        Mtrl_Source = '${req.body.requestData.NewSrlFormData.MtrlSrc}',
+        Qty_Ordered = ${parseInt(req.body.requestData.Qty_Ordered)},
+        InspLevel = '${req.body.requestData.NewSrlFormData.InspLvl}',
+        PackingLevel = '${req.body.requestData.NewSrlFormData.PkngLvl}',
+        JWCost = ${parseFloat(req.body.requestData.JwCost)},
+        MtrlCost = ${parseFloat(req.body.requestData.mtrlcost)},
+        Dwg = ${req.body.requestData.dwg},
+        tolerance = '${req.body.requestData.tolerance}',
+        HasBOM = ${req.body.requestData.HasBOM}
+      WHERE Order_No=${req.body.requestData.OrderNo}`;
+
+    misQueryMod(updateQuery, (err, blkcngdata) => {
+      if (err) {
+        logger.error(err);
+        return next(err);
+      } else {
+        console.log("blkcngdata", blkcngdata);
+        res.send(blkcngdata);  // Assuming blkcngdata is the correct variable to send
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 module.exports = OrderDetailsRouter;
