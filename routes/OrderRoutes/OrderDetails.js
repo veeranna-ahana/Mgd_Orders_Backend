@@ -461,4 +461,26 @@ OrderDetailsRouter.post(`/getQtnDataByQtnID`, async (req, res, next) => {
     next(error);
   }
 });
+
+OrderDetailsRouter.post(
+  `/postDeleteDetailsByOrderNo`,
+  async (req, res, next) => {
+    // console.log("req.body", req.body.Order_No);
+    try {
+      misQueryMod(
+        `DELETE FROM magodmis.order_details WHERE (Order_No = '${req.body.Order_No}')`,
+        (err, deleteOrderData) => {
+          if (err) {
+            res.status(500).send("Internal Server Error");
+          } else {
+            // console.log("deleteOrderData", deleteOrderData);
+            res.send(deleteOrderData);
+          }
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 module.exports = OrderDetailsRouter;
