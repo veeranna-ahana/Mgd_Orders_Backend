@@ -47,7 +47,7 @@ ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
                   });
                 });
                 // Return success response after the loop is finished
-                return res.status(200).json({ message: "Successfully Inserted" });
+                return res.status(200).json({ message: "Draft Schedule Created" });
               }
             });
           } else {
