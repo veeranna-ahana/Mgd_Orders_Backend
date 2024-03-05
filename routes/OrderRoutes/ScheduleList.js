@@ -674,12 +674,12 @@ function executeSecondQuery(scheduleId, callback) {
   misQueryMod(query, callback);
 }
 
-//Fixture Order
+// Fixture Order
 ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
   // console.log("req.body",req.body)
   // Assuming req.body.formdata[0].Delivery_Date is a Date object or a string representing a date
-const deliveryDate = new Date(req.body.formdata[0].Delivery_Date);
-const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  const deliveryDate = new Date(req.body.formdata[0].Delivery_Date);
+  const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
   try {
     // Check if there are any existing orders matching the conditions
     let checkExistingQuery = `SELECT * FROM magodmis.order_list i WHERE i.ScheduleId ='${req.body.formdata[0].ScheduleId}' AND i.\`Order-Ref\`='Fixture'`;
@@ -688,10 +688,10 @@ const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').repla
         console.log("Error checking existing orders:", err);
         return res.status(500).send("Error checking existing orders");
       }
-      console.log("existingData",existingData.length);
+      console.log("existingData", existingData.length);
 
       if (existingData.length === 0) {
-        console.log("excuting Inset")
+        console.log("excuting Insert")
         // Fetch current Running_No
         let getrunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='internalFixture'`;
         misQueryMod(getrunningNoQuery, (err, runningNoData) => {
@@ -715,15 +715,28 @@ const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').repla
             let insertQuery = `INSERT INTO magodmis.order_list(order_no,order_date ,cust_code ,contact_name ,Type, 
               delivery_date , purchase_order , order_received_by, salescontact, recordedby, dealing_engineer ,
                order_status , special_instructions ,payment , ordervalue , materialvalue , billing_address , delivery , del_place ,
-               del_mode , \`Order-Ref\`, order_type , register ,qtnno,ScheduleId) VALUES (${nextSrl},now(),'${req.body.formdata[0].Cust_Code}','${req.body.formdata[0].Dealing_Engineer}','Profile','${formattedDeliveryDate}','${req.body.formdata[0].PO}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].SalesContact}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Dealing_Engineer}','Recorded','${req.body.formdata[0].Special_Instructions}','ByOrder','0','0','Magod Laser','0','Shop Floor','By Hand','Fixture','Scheduled','0','None','${req.body.formdata[0].ScheduleId}')`;
+               del_mode , \`Order-Ref\`, order_type , register ,qtnno,ScheduleId) VALUES (${nextSrl},now(),'${req.body.formdata[0].Cust_Code}',
+               '${req.body.formdata[0].Dealing_Engineer}','Service','${formattedDeliveryDate}','${req.body.formdata[0].PO}','${req.body.formdata[0].Dealing_Engineer}',
+               '${req.body.formdata[0].SalesContact}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Dealing_Engineer}','Recorded',
+               '${req.body.formdata[0].Special_Instructions}','ByOrder','0','0','Magod Laser','0','Shop Floor','By Hand','Fixture','Scheduled','0','None',
+               '${req.body.formdata[0].ScheduleId}')`;
             misQueryMod(insertQuery, (err, insertResult) => {
               if (err) {
                 console.log("Error inserting order:", err);
                 return res.status(500).send("Error inserting order");
               }
 
-              // Send the response
-              res.send(insertResult);
+              // Fetch the inserted row
+              let fetchInsertedRowQuery = `SELECT * FROM magodmis.order_list WHERE Order_No = ${insertResult.insertId}`;
+              misQueryMod(fetchInsertedRowQuery, (err, insertedRow) => {
+                if (err) {
+                  console.log("Error fetching inserted row:", err);
+                  return res.status(500).send("Error fetching inserted row");
+                }
+
+                // Send the inserted row as a response
+                res.send(insertedRow);
+              });
             });
           });
         });
@@ -737,6 +750,8 @@ const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').repla
     next(error);
   }
 });
+
+
 
 ///DELETE SCHEDULE
 ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
