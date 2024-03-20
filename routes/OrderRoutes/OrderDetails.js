@@ -756,7 +756,7 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
   
 
 OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
-  // console.log("enter into singleChangeUpdate")
+   console.log("enter into singleChangeUpdate")
   console.log("req...",req.body)
  
   try {
