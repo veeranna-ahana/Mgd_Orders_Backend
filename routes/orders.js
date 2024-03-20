@@ -33,7 +33,15 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
     const ordertype = req.body.ordertype;
     const purchaseorder = req.body.purchaseorder;
     const qtnno = req.body.qtnno;
-    const deliverydate = moment(req.body.deliverydate).format("YYYY-MM-DD");
+
+    let deliverydate = null;
+
+    if (req.body.deliverydate) {
+       deliverydate = moment(req.body.deliverydate).format("YYYY-MM-DD");
+      }
+    // const deliverydate = moment(req.body.deliverydate).format("YYYY-MM-DD");
+    // const deliverydate = req.body.deliverydate ? moment(req.body.deliverydate).format("YYYY-MM-DD") : null;
+
     const paymentterms = req.body.paymentterms;
     const salesContact = req.body.salesContact;
     const ccode = req.body.CustCode;
