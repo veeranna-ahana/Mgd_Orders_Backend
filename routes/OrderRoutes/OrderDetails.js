@@ -650,58 +650,57 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
   const orderSrlArray = req.body.OrderSrl;
   console.log("orderSrlArray",orderSrlArray)
   const orderNo = req.body.OrderNo;
-  let completedUpdates = 0; // Counter for completed updates
+  let completedUpdates = 0; 
   for (let i = 0; i < orderSrlArray.length; i++) {
     const orderSrl = orderSrlArray[i];
     const blkCngCheckBoxValue = req.body.blkCngCheckBox[i];
   console.log("blkCngCheckBoxValue",blkCngCheckBoxValue)
-    if (blkCngCheckBoxValue) {
-      // Only proceed with update if blkCngCheckBox is true
-      const qtyOrdered = parseInt(req.body.quantity);
-      const jwRate = parseFloat(req.body.JwCost);
-      const materialRate = parseFloat(req.body.mtrlcost);
-      const unitPrice = parseFloat(req.body.unitPrice);
-      const Operation = req.body.Operation;
-      const InspLvl = req.body.InspLvl;
-      const PkngLvl = req.body.PkngLvl;
-      const DwgName = req.body.DwgName;
+    // if (blkCngCheckBoxValue) {
+    //   const qtyOrdered = parseInt(req.body.quantity);
+    //   const jwRate = parseFloat(req.body.JwCost);
+    //   const materialRate = parseFloat(req.body.mtrlcost);
+    //   const unitPrice = parseFloat(req.body.unitPrice);
+    //   const Operation = req.body.Operation;
+    //   const InspLvl = req.body.InspLvl;
+    //   const PkngLvl = req.body.PkngLvl;
+    //   const DwgName = req.body.DwgName;
   
-      const updateQuery = `
-        UPDATE magodmis.order_details
-        SET
-          Qty_Ordered = ${qtyOrdered},
-          JWCost = ${jwRate},
-          MtrlCost = ${materialRate},
-          UnitPrice = ${unitPrice},
-          Operation = '${Operation}',
-          InspLevel = '${InspLvl}',
-          PackingLevel = '${PkngLvl}',
-          DwgName = '${DwgName}'
-        WHERE Order_No = ${orderNo} 
-        AND Order_Srl = ${orderSrl}
-      `;
+    //   const updateQuery = `
+    //     UPDATE magodmis.order_details
+    //     SET
+    //       Qty_Ordered = ${qtyOrdered},
+    //       JWCost = ${jwRate},
+    //       MtrlCost = ${materialRate},
+    //       UnitPrice = ${unitPrice},
+    //       Operation = '${Operation}',
+    //       InspLevel = '${InspLvl}',
+    //       PackingLevel = '${PkngLvl}',
+    //       DwgName = '${DwgName}'
+    //     WHERE Order_No = ${orderNo} 
+    //     AND Order_Srl = ${orderSrl}
+    //   `;
   
-      misQueryMod(updateQuery, (err, blkcngdata) => {
-        if (err) {
-          logger.error(err);
-          reject(err);
-        } else {
-          console.log("blkcngdata", blkcngdata);
-          completedUpdates++; // Increment completed updates counter
-          if (completedUpdates === orderSrlArray.length) {
-            // If all updates are completed, send the response
-            res.send(blkcngdata);
-          }
-        }
-      });
-    } else {
-      // If blkCngCheckBox is false, skip the update but still increment completedUpdates
-      completedUpdates++;
-      if (completedUpdates === orderSrlArray.length) {
-        // If all updates are completed, send the response
-        res.send({ message: "No updates performed." });
-      }
-    }
+    //   misQueryMod(updateQuery, (err, blkcngdata) => {
+    //     if (err) {
+    //       logger.error(err);
+    //       reject(err);
+    //     } else {
+    //       console.log("blkcngdata", blkcngdata);
+    //       completedUpdates++; // Increment completed updates counter
+    //       if (completedUpdates === orderSrlArray.length) {
+    //         // If all updates are completed, send the response
+    //         res.send(blkcngdata);
+    //       }
+    //     }
+    //   });
+    // } else {
+    //   // If blkCngCheckBox is false, skip the update but still increment completedUpdates
+    //   completedUpdates++;
+    //   if (completedUpdates === orderSrlArray.length) {
+    //     // If all updates are completed, send the response
+    //     res.send({ message: "No updates performed." });
+    //   }
+    // }
   }
   
   // for (const orderSrl of orderSrlArray) {
