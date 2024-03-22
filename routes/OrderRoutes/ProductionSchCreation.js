@@ -17,7 +17,7 @@ ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
           return res.status(500).json({ message: "Error occurred while fetching order details" });
         } else {
           const count = data.length;
-          console.log("req.body.scheduleOption",req.body.scheduleOption)
+          // console.log("req.body.scheduleOption",req.body.scheduleOption)
           if ((req.body.scheduleOption==='Full Order'  && count === req.body.selectedItems.length) || req.body.scheduleOption==='Partial Order') {
             let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
                       SalesContact, Dealing_Engineer, ScheduleType, Type, Internal, Schedule_Status) 
