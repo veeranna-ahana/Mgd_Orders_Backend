@@ -64,6 +64,25 @@ ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
   }
 });
 
+//get DWg List of Selected Task
+ScheduleListRouter.post(`/getDwgDataListTMTab`, async (req, res, next) => {
+  // console.log("req.body /getTaskandMterial is",req.body);
+  let query = `SELECT * FROM magodmis.orderscheduledetails where TaskNo='${req.body.list.TaskNo}'`;
+
+  try {
+    misQueryMod(query, (err, data) => {
+      if (err) {
+        console.log("err", err);
+      } else {
+        res.send(data);
+        // console.log("data is",data);
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 ///get Form Values in Order Schedule Details
 ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
   // console.log("req.body /getTaskandMterial is",req.body);
@@ -132,6 +151,7 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
 
 //Onclick of Suspend
 ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
+  console.log("req.body", req.body);
   let query = `SELECT * FROM magodmis.orderschedule WHERE ScheduleId='${req.body.scheduleDetailsRow.ScheduleId}';`;
 
   try {
@@ -427,13 +447,6 @@ ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
 
 //Schedule Button
 ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
-  console.log("{req.body.formdata[0].ScheduleId", req.body.formdata[0].ScheduleId);
-  const originalDate = new Date(req.body.formdata[0].schTgtDate);
-  const formattedDate = originalDate
-    .toISOString()
-    .slice(0, 19)
-    .replace("T", " ");
-
   try {
     let querySalesOverdue = `SELECT count(d.DC_Inv_No) AS SalesOverdueCount 
                                  FROM magodmis.draft_dc_inv_register d
@@ -449,7 +462,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 
         if (salesOverdueCount > 0) {
           return res.status(200).json({
-            message: `${salesOverdueCount} Sales Invoices have PaymentDate Exceeding 30 Days. Get Payment Cleared. Do you wish to proceed scheduling?`,
+            message: `${salesOverdueCount} Sales Invoices have PaymentDate Exceeding 30 Days. Get Payment Cleared. Do you wish to proceed Scheduling?`,
           });
         } else {
           let queryPaymentCaution = `SELECT count(d.DC_Inv_No) AS PaymentCautionCount 
@@ -467,83 +480,252 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 
               if (paymentCautionCount > 0) {
                 return res.status(200).json({
-                  message: `${paymentCautionCount} Invoices have PaymentDate exceeding by 60 days. Get Payment Cleared. Do you wish to proceed scheduling?`,
+                  message: `${paymentCautionCount} Invoices have PaymentDate exceeding by 60 days. Get Payment Cleared. Do you wish to proceed Scheduling?`,
                 });
               } else {
-                let selectQuery = `SELECT o.ScheduleCount FROM magodmis.order_list o WHERE o.Order_No='${req.body.formdata[0].Order_No}'`;
+                let selectScheduleDetailsQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
 
-                misQueryMod(selectQuery, (err, selectData) => {
-                  if (err) {
-                    console.log("Error executing select query:", err);
-                    return res
-                      .status(500)
-                      .json({ error: "Internal Server Error" });
-                  } else {
-                    const scheduleCount = selectData[0].ScheduleCount;
-
-                    let updateQuery1 = `UPDATE order_details SET QtyScheduled=QtyScheduled+'${req.body.scheduleDetailsRow.QtyScheduled}' WHERE OrderDetailID='${req.body.scheduleDetailsRow.OrderDetailID}'`;
-
-                    let updateQuery2 = `UPDATE orderschedule SET Schedule_status='Tasked', 
-                                        schTgtDate='${formattedDate}', ScheduleDate=now(),ordschno='${req.body.formdata[0].OrdSchNo}' 
-                                        WHERE ScheduleID='${req.body.formdata[0].ScheduleId}'`;
-
-                    let updateQuery3 = `UPDATE magodmis.order_list o SET o.ScheduleCount='${scheduleCount}' WHERE o.Order_No='${req.body.formdata[0].Order_No}';`;
-
-                    let selectSRLQuery = `SELECT ScheduleNo FROM magodmis.orderschedule WHERE Order_No='${req.body.formdata[0].Order_No}'`;
-
-                    misQueryMod(selectSRLQuery, (err, selectSRLData) => {
-                      if (err) {
-                        console.log("Error executing select query for ScheduleNo:", err);
-                        return res.status(500).json({ error: "Internal Server Error" });
+                misQueryMod(
+                  selectScheduleDetailsQuery,
+                  (err, scheduleDetailsData) => {
+                    if (err) {
+                      console.log(
+                        "Error executing select query for orderscheduledetails:",
+                        err
+                      );
+                      return res
+                        .status(500)
+                        .json({ error: "Internal Server Error" });
+                    } else {
+                      const hasZeroQtyScheduled = scheduleDetailsData.some(
+                        (row) => row.QtyScheduled === 0
+                      );
+                      console.log("scheduleDetailsData", scheduleDetailsData);
+                      if (hasZeroQtyScheduled) {
+                        return res.status(200).json({
+                          message: `Cannot Schedule Zero Quantity For ${scheduleDetailsData[0].DwgName}. Do you wish to delete it from the Schedule?`,
+                          scheduleDetails: scheduleDetailsData,
+                        });
                       } else {
-                        let nextSRL;
-if (selectSRLData.length === 0) {
-    nextSRL = "01";
-} else {
-    const maxSRL = Math.max(...selectSRLData.map(row => parseInt(row.ScheduleNo) || 0));
-    nextSRL = (maxSRL === -Infinity ? 1 : maxSRL + 1).toString().padStart(2, '0');
-}
+                        const originalDate = new Date(
+                          req.body.formdata[0].schTgtDate
+                        );
+                        const formattedDate = originalDate
+                          .toISOString()
+                          .slice(0, 19)
+                          .replace("T", " ");
 
-                        console.log("nextSRL is", nextSRL);
+                        let selectQuery = `SELECT o.ScheduleCount FROM magodmis.order_list o WHERE o.Order_No='${req.body.formdata[0].Order_No}'`;
 
-                        let neworderSch = `${req.body.formdata[0].Order_No} ${nextSRL}`;
-                        console.log("neworderSch", neworderSch);
-
-                        let updateSRLQuery = `UPDATE magodmis.orderschedule SET ScheduleNo='${nextSRL}',OrdSchNo='${neworderSch}' WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
-
-                        misQueryMod(updateSRLQuery, (err, result4) => {
+                        misQueryMod(selectQuery, (err, selectData) => {
                           if (err) {
-                            console.log("Error executing update query for ScheduleNo:", err);
-                            return res.status(500).json({ error: "Internal Server Error" });
+                            console.log("Error executing select query:", err);
+                            return res
+                              .status(500)
+                              .json({ error: "Internal Server Error" });
                           } else {
-                            misQueryMod(updateQuery1, (err, result1) => {
-                              if (err) {
-                                console.log("Error executing update query 1:", err);
-                                return res.status(500).json({ error: "Internal Server Error" });
-                              } else {
-                                misQueryMod(updateQuery2, (err, result2) => {
-                                  if (err) {
-                                    console.log("Error executing update query 2:", err);
-                                    return res.status(500).json({ error: "Internal Server Error" });
+                            const scheduleCount = selectData[0].ScheduleCount;
+
+                            let updateQuery1 = `UPDATE order_details SET QtyScheduled=QtyScheduled+'${req.body.scheduleDetailsRow.QtyScheduled}' WHERE OrderDetailID='${req.body.scheduleDetailsRow.OrderDetailID}'`;
+
+                            let updateQuery2 = `UPDATE orderschedule SET Schedule_status='Tasked', 
+                                              schTgtDate='${formattedDate}', ScheduleDate=now(),ordschno='${req.body.formdata[0].OrdSchNo}' 
+                                              WHERE ScheduleID='${req.body.formdata[0].ScheduleId}'`;
+
+                            let updateQuery3 = `UPDATE magodmis.order_list o SET o.ScheduleCount='${scheduleCount}' WHERE o.Order_No='${req.body.formdata[0].Order_No}';`;
+
+                            let selectSRLQuery = `SELECT ScheduleNo FROM magodmis.orderschedule WHERE Order_No='${req.body.formdata[0].Order_No}'`;
+
+                            misQueryMod(
+                              selectSRLQuery,
+                              (err, selectSRLData) => {
+                                if (err) {
+                                  console.log(
+                                    "Error executing select query for ScheduleNo:",
+                                    err
+                                  );
+                                  return res
+                                    .status(500)
+                                    .json({ error: "Internal Server Error" });
+                                } else {
+                                  let nextSRL;
+                                  if (selectSRLData.length === 0) {
+                                    nextSRL = "01";
                                   } else {
-                                    misQueryMod(updateQuery3, (err, result3) => {
-                                      if (err) {
-                                        console.log("Error executing update query 3:", err);
-                                        return res.status(500).json({ error: "Internal Server Error" });
-                                      } else {
-                                        return res.status(200).json({ message: "Scheduled" });
-                                      }
-                                    });
+                                    const maxSRL = Math.max(
+                                      ...selectSRLData.map(
+                                        (row) => parseInt(row.ScheduleNo) || 0
+                                      )
+                                    );
+                                    nextSRL = (
+                                      maxSRL === -Infinity ? 1 : maxSRL + 1
+                                    )
+                                      .toString()
+                                      .padStart(2, "0");
                                   }
-                                });
+
+                                  let neworderSch = `${req.body.formdata[0].Order_No} ${nextSRL}`;
+                                  console.log("neworderSch is", neworderSch);
+
+                                  let updateSRLQuery = `UPDATE magodmis.orderschedule 
+                              SET ScheduleNo='${nextSRL}', OrdSchNo='${neworderSch}' 
+                              WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+                                  console.log(
+                                    "updateSRLQuery:",
+                                    updateSRLQuery
+                                  );
+
+                                  misQueryMod(
+                                    updateSRLQuery,
+                                    (err, result4) => {
+                                      if (err) {
+                                        console.log(
+                                          "Error executing update query for ScheduleNo:",
+                                          err
+                                        );
+                                        return res.status(500).json({
+                                          error: "Internal Server Error",
+                                        });
+                                      } else {
+                                        console.log("result4 is", result4);
+                                        misQueryMod(
+                                          updateQuery1,
+                                          (err, result1) => {
+                                            if (err) {
+                                              console.log(
+                                                "Error executing update query 1:",
+                                                err
+                                              );
+                                              return res.status(500).json({
+                                                error: "Internal Server Error",
+                                              });
+                                            } else {
+                                              misQueryMod(
+                                                updateQuery2,
+                                                (err, result2) => {
+                                                  if (err) {
+                                                    console.log(
+                                                      "Error executing update query 2:",
+                                                      err
+                                                    );
+                                                    return res
+                                                      .status(500)
+                                                      .json({
+                                                        error:
+                                                          "Internal Server Error",
+                                                      });
+                                                  } else {
+                                                    misQueryMod(
+                                                      updateQuery3,
+                                                      (err, result3) => {
+                                                        if (err) {
+                                                          console.log(
+                                                            "Error executing update query 3:",
+                                                            err
+                                                          );
+                                                          return res
+                                                            .status(500)
+                                                            .json({
+                                                              error:
+                                                                "Internal Server Error",
+                                                            });
+                                                        } else {
+                                                          /////Create Task
+                                                          let selectScheduleDetailsQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+                                                          misQueryMod(selectScheduleDetailsQuery, (err, scheduleDetails) => {
+                                                            if (err) {
+                                                              console.log("Error executing select query for orderscheduledetails:", err);
+                                                              return res.status(500).json({ error: "Internal Server Error" });
+                                                            } else {
+                                                              const taskNumbers = {}; // Object to store task numbers for each combination
+                                                              let taskNumberCounter = 1; // Counter for generating task numbers
+                                                          
+                                                              // Iterate through scheduleDetails to generate and update task numbers
+                                                              scheduleDetails.forEach((row) => {
+                                                                // Construct a unique key based on Mtrl_Code, MProcess, and Operation
+                                                                const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
+                                                          
+                                                                // Initialize task number if it doesn't exist for this key
+                                                                if (!taskNumbers.hasOwnProperty(key)) {
+                                                                  taskNumbers[key] = taskNumberCounter.toString().padStart(2, "0"); // Start with task number 01 for this key
+                                                                  taskNumberCounter++; // Increment the task number counter
+                                                                }
+                                                          
+                                                                // Generate the task number with the format "neworderSch taskNumber"
+                                                                const TaskNo = `${neworderSch} ${taskNumbers[key]}`;
+                                                          
+                                                                // Update the TaskNo for the current row in the database
+                                                                let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails 
+                                                                                         SET TaskNo='${TaskNo}' 
+                                                                                         WHERE SchDetailsID='${row.SchDetailsID}'`;
+                                                          
+                                                                // Execute the update query
+                                                                misQueryMod(updateTaskNoQuery, (err, result) => {
+                                                                  if (err) {
+                                                                    console.log("Error updating TaskNo:", err);
+                                                                  }
+                                                                });
+                                                          
+                                                                // Insert into magodmis.nc_task_list table
+                                                                let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
+                                                                   ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
+                                                                                             VALUES('${TaskNo}', '${row.SchDetailsID}', '${formattedDate}',
+                                                                                              '${req.body.formdata[0].OrdSchNo}',  ${nextSRL}, 
+                                                                                              '${req.body.formdata[0].Cust_Code}',  '${row.Mtrl_Code}',
+                                                                                              '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '1',
+                                                                                              '${row.QtyScheduled}',  '${row.MProcess}', '${row.Operation}')`;
+                                                          
+                                                                // Execute the insert query
+                                                                misQueryMod(insertNcTaskListQuery, (err, result) => {
+                                                                  if (err) {
+                                                                    console.log("Error inserting into nc_task_list:", err);
+                                                                  }
+                                                                });
+                                                                  console.log("insertNcTaskListQuery",insertNcTaskListQuery);
+
+                                                          
+                                                                // Insert into magodmis.task_partslist table
+                                                                let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl, OrdSch, HasBOM) 
+                                                                                                 SELECT  @NcTaskId, @TaskNo, o.SchDetailsID, o.DwgName, o.QtyScheduled, o.Schedule_Srl, @ScheduleNo, o.HasBOM 
+                                                                                                 FROM magodmis.orderscheduledetails o WHERE o.NcTaskId= @NcTaskId`;
+                                                          
+                                                                // Execute the insert query
+                                                                misQueryMod(insertTaskPartsListQuery, (err, result) => {
+                                                                  if (err) {
+                                                                    console.log("Error inserting into task_partslist:", err);
+                                                                  }
+                                                                });
+                                                              });
+                                                          
+                                                              return res.status(200).json({ message: "Scheduled" });
+                                                            }
+                                                          });
+                                                          
+
+
+                                                        }
+                                                      }
+                                                    );
+                                                  }
+                                                }
+                                              );
+                                            }
+                                          }
+                                        );
+                                      }
+                                    }
+                                  );
+                                }
                               }
-                            });
+                            );
                           }
                         });
                       }
-                    });
+                    }
                   }
-                });
+                );
               }
             }
           });
@@ -555,8 +737,6 @@ if (selectSRLData.length === 0) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-
 
 //Sales Contact
 ScheduleListRouter.get(`/getSalesContact`, async (req, res, next) => {
@@ -679,7 +859,10 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
   // console.log("req.body",req.body)
   // Assuming req.body.formdata[0].Delivery_Date is a Date object or a string representing a date
   const deliveryDate = new Date(req.body.formdata[0].Delivery_Date);
-  const formattedDeliveryDate = deliveryDate.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+  const formattedDeliveryDate = deliveryDate
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d{3}Z$/, "");
   try {
     // Check if there are any existing orders matching the conditions
     let checkExistingQuery = `SELECT * FROM magodmis.order_list i WHERE i.ScheduleId ='${req.body.formdata[0].ScheduleId}' AND i.\`Order-Ref\`='Fixture'`;
@@ -691,7 +874,7 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
       console.log("existingData", existingData.length);
 
       if (existingData.length === 0) {
-        console.log("excuting Insert")
+        console.log("excuting Insert");
         // Fetch current Running_No
         let getrunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='internalFixture'`;
         misQueryMod(getrunningNoQuery, (err, runningNoData) => {
@@ -716,7 +899,7 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
               delivery_date , purchase_order , order_received_by, salescontact, recordedby, dealing_engineer ,
                order_status , special_instructions ,payment , ordervalue , materialvalue , billing_address , delivery , del_place ,
                del_mode , \`Order-Ref\`, order_type , register ,qtnno,ScheduleId) VALUES (${nextSrl},now(),'${req.body.formdata[0].Cust_Code}',
-               '${req.body.formdata[0].Dealing_Engineer}','Service','${formattedDeliveryDate}','${req.body.formdata[0].PO}','${req.body.formdata[0].Dealing_Engineer}',
+               '${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Type}','${formattedDeliveryDate}','${req.body.formdata[0].PO}','${req.body.formdata[0].Dealing_Engineer}',
                '${req.body.formdata[0].SalesContact}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Dealing_Engineer}','Recorded',
                '${req.body.formdata[0].Special_Instructions}','ByOrder','0','0','Magod Laser','0','Shop Floor','By Hand','Fixture','Scheduled','0','None',
                '${req.body.formdata[0].ScheduleId}')`;
@@ -751,8 +934,6 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
   }
 });
 
-
-
 ///DELETE SCHEDULE
 ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
   // console.log("req.body /getTaskandMterial is",req.body);
@@ -763,7 +944,7 @@ ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
       if (err) {
         console.log("err", err);
       } else {
-        res.status(200).json({message:"Successfully Deleted"});
+        res.status(200).json({ message: "Successfully Deleted" });
       }
     });
   } catch (error) {
@@ -771,5 +952,22 @@ ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
   }
 });
 
+///Delete Dwg
+ScheduleListRouter.post(`/deleteDwgOrderSch`, async (req, res, next) => {
+  // console.log("req.body /getTaskandMterial is",req.body);
+  let query = `Delete  FROM magodmis.orderscheduledetails where ScheduleId='${req.body.rowScheduleList.ScheduleId}'`;
+
+  try {
+    misQueryMod(query, (err, data) => {
+      if (err) {
+        console.log("err", err);
+      } else {
+        res.status(200).json({ message: "Successfully Deleted" });
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = ScheduleListRouter;
