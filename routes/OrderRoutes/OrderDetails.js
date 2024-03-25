@@ -703,54 +703,7 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
     // }
   }
   
-  // for (const orderSrl of orderSrlArray) {
-  //   const qtyOrdered = parseInt(req.body.quantity);
-  //   const jwRate = parseFloat(req.body.JwCost);
-  //   const materialRate = parseFloat(req.body.mtrlcost);
-  //   const unitPrice = parseFloat(req.body.unitPrice);
-  //   const Operation = req.body.Operation;
-  //   const InspLvl = req.body.InspLvl;
-  //   const PkngLvl = req.body.PkngLvl;
-  //   const DwgName = req.body.DwgName;
-  //   const blkCngCheckBox = req.body.blkCngCheckBox;
-  //   console.log("orderNo....,",orderNo)
-  //   console.log("Operation....,",Operation)
-  //   console.log("blkCngCheckBox....,",blkCngCheckBox)
-
-
-  //   const updateQuery = `
-  //   UPDATE magodmis.order_details
-  //   SET
-  //     Qty_Ordered = ${qtyOrdered},
-  //     JWCost = ${jwRate},
-  //     MtrlCost = ${materialRate},
-  //     UnitPrice = ${unitPrice},
-  //     Operation = '${Operation}',
-  //     InspLevel = '${InspLvl}',
-  //     PackingLevel = '${PkngLvl}',
-  //     DwgName = '${DwgName}'
-  //   WHERE Order_No = ${orderNo} 
-  //   AND Order_Srl = ${orderSrl}
-   
-    
-  // `;
- 
-    
-   
-  //     misQueryMod(updateQuery, (err, blkcngdata) => {
-  //       if (err) {
-  //         logger.error(err);
-  //         reject(err);
-  //       } else {
-  //         console.log("blkcngdata", blkcngdata);
-  //         completedUpdates++; // Increment completed updates counter
-  //         if (completedUpdates === orderSrlArray.length) {
-  //           // If all updates are completed, send the response
-  //           res.send(blkcngdata);
-  //         }
-  //       }
-  //     });
-  //   } 
+  
   });
   
 
@@ -767,6 +720,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
     const InspLvl = req.body.InspLvl;
     const PkngLvl = req.body.PkngLvl;
     const DwgName = req.body.DwgName;
+    const MtrlSrc = req.body.MtrlSrc;
 
     const updateQuery = `
     UPDATE magodmis.order_details
@@ -775,7 +729,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
       JWCost = CASE WHEN ${jwRate} IS NOT NULL THEN ${jwRate} ELSE JWCost END,
      MtrlCost = CASE WHEN ${materialRate} IS NOT NULL THEN ${materialRate} ELSE MtrlCost END,
       UnitPrice = CASE WHEN ${unitPrice} IS NOT NULL THEN ${unitPrice} ELSE UnitPrice END,
-      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}'
+      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}',Mtrl_Source='${MtrlSrc}'
      
     WHERE Order_No = ${req.body.OrderNo} AND Order_Srl = ${req.body.OrderSrl}
   `;
