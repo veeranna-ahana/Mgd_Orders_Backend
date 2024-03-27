@@ -647,14 +647,45 @@ OrderDetailsRouter.post(
 
 OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
   console.log("enter into bulkChangeUpdate");
+  // console.log("req.body",req.body.selectedItems);
+
+  const selectdArray = req.body.selectedItems;
+  console.log("selectdArray",selectdArray)
   const orderSrlArray = req.body.OrderSrl;
-  console.log("orderSrlArray",orderSrlArray)
   const orderNo = req.body.OrderNo;
   let completedUpdates = 0; 
-  for (let i = 0; i < orderSrlArray.length; i++) {
-    const orderSrl = orderSrlArray[i];
-    const blkCngCheckBoxValue = req.body.blkCngCheckBox[i];
-  console.log("blkCngCheckBoxValue",blkCngCheckBoxValue)
+  for (let i = 0; i < selectdArray.length; i++) {
+    const orderSrl = selectdArray[i].Order_Srl;
+    console.log("orderSrl",orderSrl)
+    const blkCngCheckBoxValue = req.body.blkCngCheckBox;
+ 
+    // Check if blkCngCheckBox is true for current item
+    // const blkCngCheckBoxValue = selectdArray.blkCngCheckBox[i];
+    console.log("blkCngCheckBoxValue",blkCngCheckBoxValue)
+
+    if (blkCngCheckBoxValue) {
+       qtyOrdered = parseInt(req.body.quantity);
+       jwRate = parseFloat(req.body.JwCost);
+       materialRate = parseFloat(req.body.mtrlcost);
+       unitPrice = parseFloat(req.body.unitPrice);
+       Operation = req.body.Operation;
+       InspLvl = req.body.InspLvl;
+       PkngLvl = req.body.PkngLvl;
+       DwgName = req.body.DwgName;
+  
+    } else {
+       // Use original values
+       qtyOrdered = parseInt(selectdArray[i].quantity);
+       jwRate = parseFloat(selectdArray[i].JwCost);
+       materialRate = parseFloat(selectdArray[i].mtrlcost);
+       unitPrice = parseFloat(selectdArray[i].unitPrice);
+       Operation = selectdArray[i].Operation;
+       InspLvl = selectdArray[i].InspLvl;
+       PkngLvl = selectdArray[i].PkngLvl;
+       DwgName = selectdArray[i].DwgName;
+      
+    }
+
     // if (blkCngCheckBoxValue) {
     //   const qtyOrdered = parseInt(req.body.quantity);
     //   const jwRate = parseFloat(req.body.JwCost);
@@ -665,34 +696,34 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
     //   const PkngLvl = req.body.PkngLvl;
     //   const DwgName = req.body.DwgName;
   
-    //   const updateQuery = `
-    //     UPDATE magodmis.order_details
-    //     SET
-    //       Qty_Ordered = ${qtyOrdered},
-    //       JWCost = ${jwRate},
-    //       MtrlCost = ${materialRate},
-    //       UnitPrice = ${unitPrice},
-    //       Operation = '${Operation}',
-    //       InspLevel = '${InspLvl}',
-    //       PackingLevel = '${PkngLvl}',
-    //       DwgName = '${DwgName}'
-    //     WHERE Order_No = ${orderNo} 
-    //     AND Order_Srl = ${orderSrl}
-    //   `;
+      const updateQuery = `
+        UPDATE magodmis.order_details
+        SET
+          Qty_Ordered = ${qtyOrdered},
+          JWCost = ${jwRate},
+          MtrlCost = ${materialRate},
+          UnitPrice = ${unitPrice},
+          Operation = '${Operation}',
+          InspLevel = '${InspLvl}',
+          PackingLevel = '${PkngLvl}',
+          DwgName = '${DwgName}'
+        WHERE Order_No = ${orderNo} 
+        AND Order_Srl = ${orderSrl}
+      `;
   
-    //   misQueryMod(updateQuery, (err, blkcngdata) => {
-    //     if (err) {
-    //       logger.error(err);
-    //       reject(err);
-    //     } else {
-    //       console.log("blkcngdata", blkcngdata);
-    //       completedUpdates++; // Increment completed updates counter
-    //       if (completedUpdates === orderSrlArray.length) {
-    //         // If all updates are completed, send the response
-    //         res.send(blkcngdata);
-    //       }
-    //     }
-    //   });
+      misQueryMod(updateQuery, (err, blkcngdata) => {
+        if (err) {
+          logger.error(err);
+          // reject(err);
+        } else {
+          console.log("blkcngdata", blkcngdata);
+          completedUpdates++; // Increment completed updates counter
+          if (completedUpdates === orderSrlArray.length) {
+            // If all updates are completed, send the response
+            res.send(blkcngdata);
+          }
+        }
+      });
     // } else {
     //   // If blkCngCheckBox is false, skip the update but still increment completedUpdates
     //   completedUpdates++;
@@ -706,6 +737,9 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
   
   });
   
+
+
+
 
 OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
    console.log("enter into singleChangeUpdate")
