@@ -46,6 +46,7 @@ ScheduleListRouter.post(`/getDwgTableData`, async (req, res, next) => {
 
 //Task and  Material List
 ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
+  // console.log("req.body is",req.body);
   let query = `SELECT * FROM magodmis.nc_task_list where NcTaskId='${req.body.scheduleDetailsRow.NcTaskId}';
     `;
 
@@ -150,7 +151,7 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
 
 //Onclick of Suspend
 ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
-  console.log("req.body", req.body);
+  // console.log("req.body", req.body);
   let query = `SELECT * FROM magodmis.orderschedule WHERE ScheduleId='${req.body.scheduleDetailsRow.ScheduleId}';`;
 
   try {
@@ -499,7 +500,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                       const hasZeroQtyScheduled = scheduleDetailsData.some(
                         (row) => row.QtyScheduled === 0
                       );
-                      console.log("scheduleDetailsData", scheduleDetailsData);
+                      // console.log("scheduleDetailsData", scheduleDetailsData);
                       if (hasZeroQtyScheduled) {
                         return res.status(200).json({
                           message: `Cannot Schedule Zero Quantity For ${scheduleDetailsData[0].DwgName}. Do you wish to delete it from the Schedule?`,
@@ -587,7 +588,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                           error: "Internal Server Error",
                                         });
                                       } else {
-                                        console.log("result4 is", result4);
+                                        // console.log("result4 is", result4);
                                         misQueryMod(
                                           updateQuery1,
                                           (err, result1) => {
@@ -645,6 +646,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                                               scheduleDetails.forEach((row) => {
                                                                 // Construct a unique key based on Mtrl_Code, MProcess, and Operation
                                                                 const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
+                                                                // console.log(key);
                                                           
                                                                 // Initialize task number if it doesn't exist for this key
                                                                 if (!taskNumbers.hasOwnProperty(key)) {
@@ -912,7 +914,7 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
               }
 
               // Fetch the inserted row
-              let fetchInsertedRowQuery = `SELECT * FROM magodmis.order_list WHERE Order_No = ${insertResult.insertId}`;
+              let fetchInsertedRowQuery = `SELECT * FROM magodmis.order_list WHERE Order_No = ${nextSrl}`;
               misQueryMod(fetchInsertedRowQuery, (err, insertedRow) => {
                 if (err) {
                   console.log("Error fetching inserted row:", err);
