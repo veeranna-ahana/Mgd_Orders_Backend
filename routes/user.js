@@ -21,11 +21,14 @@ userRouter.post(`/login`, jsonParser, async (req, res, next) => {
     if (!username || !passwrd) res.send(createError.BadRequest());
 
     setupQueryMod(
-      `Select usr.Name, usr.UserName,usr.Password,usr.Role, unt.UnitName,usr.ActiveUser from magod_setup.magod_userlist usr
-        left join magod_setup.magodlaser_units unt on unt.UnitID = usr.UnitID WHERE usr.UserName = '${username}' and usr.ActiveUser = '1'`,
+      // `Select usr.Name, usr.UserName,usr.Password,usr.Role, unt.UnitName,usr.ActiveUser from magod_setup.magod_userlist usr
+      //   left join magod_setup.magodlaser_units unt on unt.UnitID = usr.UnitID WHERE usr.UserName = '${username}' and usr.ActiveUser = '1'`,
+      `Select usr.Name, usr.UserName,usr.Password,usr.Role, unt.UnitName, unt.Current, usr.ActiveUser from magod_setup.magod_userlist usr
+        left join magod_setup.unit_info unt on unt.UnitID = usr.UnitID WHERE usr.UserName = '${username}' and usr.ActiveUser = '1'`,
       async (err, d) => {
         if (err) logger.error(err);
         let data = d;
+        console.log("data",d)
         if (data.length > 0) {
           if (data[0]["Password"] == passwrd) {
             delete data[0]["Password"];

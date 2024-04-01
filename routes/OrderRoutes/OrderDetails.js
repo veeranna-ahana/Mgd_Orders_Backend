@@ -76,6 +76,7 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
                 MtrlCost,
                 Dwg,
              tolerance,
+             UnitPrice,
              HasBOM
 
               ) VALUES (
@@ -95,6 +96,7 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
                 ${parseFloat(req.body.requestData.mtrlcost)},
                 ${req.body.requestData.dwg},
                 '${req.body.requestData.tolerance}',
+                '${parseFloat(req.body.requestData.JwCost) +parseFloat(req.body.requestData.mtrlcost)}',
                 ${req.body.requestData.HasBOM}
 
               )`,
@@ -647,66 +649,42 @@ OrderDetailsRouter.post(
 
 OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
   console.log("enter into bulkChangeUpdate");
-  // console.log("req.body",req.body.selectedItems);
-
   const selectdArray = req.body.selectedItems;
-  console.log("selectdArray",selectdArray)
   const orderSrlArray = req.body.OrderSrl;
   const orderNo = req.body.OrderNo;
+  console.log("req.body.quantity",req.body.quantity)
+
   let completedUpdates = 0; 
   for (let i = 0; i < selectdArray.length; i++) {
     const orderSrl = selectdArray[i].Order_Srl;
-    console.log("orderSrl",orderSrl)
     const blkCngCheckBoxValue = req.body.blkCngCheckBox;
- 
-    // Check if blkCngCheckBox is true for current item
-    // const blkCngCheckBoxValue = selectdArray.blkCngCheckBox[i];
-    console.log("blkCngCheckBoxValue",blkCngCheckBoxValue)
+  console.log("selectdArray[i]. Qty_Ordered",selectdArray[i]. Qty_Ordered)
+    
 
-    if (blkCngCheckBoxValue) {
-       qtyOrdered = parseInt(req.body.quantity);
-       jwRate = parseFloat(req.body.JwCost);
-       materialRate = parseFloat(req.body.mtrlcost);
-       unitPrice = parseFloat(req.body.unitPrice);
-       Operation = req.body.Operation;
-       InspLvl = req.body.InspLvl;
-       PkngLvl = req.body.PkngLvl;
-       DwgName = req.body.DwgName;
-  
-    } else {
-       // Use original values
-       qtyOrdered = parseInt(selectdArray[i].quantity);
-       jwRate = parseFloat(selectdArray[i].JwCost);
-       materialRate = parseFloat(selectdArray[i].mtrlcost);
-       unitPrice = parseFloat(selectdArray[i].unitPrice);
-       Operation = selectdArray[i].Operation;
-       InspLvl = selectdArray[i].InspLvl;
-       PkngLvl = selectdArray[i].PkngLvl;
-       DwgName = selectdArray[i].DwgName;
-      
-    }
+    DwgName = blkCngCheckBoxValue[0] ? req.body.DwgName : selectdArray[i].DwgName;
+    Mtrl_Code = blkCngCheckBoxValue[1] ? req.body.strmtrlcode : selectdArray[i].Mtrl_Code;
+    Mtrl_Source = blkCngCheckBoxValue[2] ? req.body.MtrlSrc : selectdArray[i].Mtrl_Source;
+    Operation = blkCngCheckBoxValue[3] ? req.body.Operation : selectdArray[i].Operation;
+    qtyOrdered = blkCngCheckBoxValue[4] ? req.body.quantity : selectdArray[i]. Qty_Ordered;
+    jwRate = blkCngCheckBoxValue[5] ? req.body.JwCost : selectdArray[i].JWCost;
+    unitPrice = blkCngCheckBoxValue[6] ? req.body.unitPrice : selectdArray[i].UnitPrice;
+    materialRate = blkCngCheckBoxValue[7] ? req.body.mtrlcost : selectdArray[i].MtrlCost;
+    InspLvl = blkCngCheckBoxValue[8] ? req.body.InspLvl : selectdArray[i].InspLevel;
+    PkngLvl = blkCngCheckBoxValue[9] ? req.body.PkngLvl : selectdArray[i].PackingLevel;
 
-    // if (blkCngCheckBoxValue) {
-    //   const qtyOrdered = parseInt(req.body.quantity);
-    //   const jwRate = parseFloat(req.body.JwCost);
-    //   const materialRate = parseFloat(req.body.mtrlcost);
-    //   const unitPrice = parseFloat(req.body.unitPrice);
-    //   const Operation = req.body.Operation;
-    //   const InspLvl = req.body.InspLvl;
-    //   const PkngLvl = req.body.PkngLvl;
-    //   const DwgName = req.body.DwgName;
-  
       const updateQuery = `
         UPDATE magodmis.order_details
-        SET
-          Qty_Ordered = ${qtyOrdered},
-          JWCost = ${jwRate},
-          MtrlCost = ${materialRate},
-          UnitPrice = ${unitPrice},
-          Operation = '${Operation}',
-          InspLevel = '${InspLvl}',
-          PackingLevel = '${PkngLvl}',
-          DwgName = '${DwgName}'
+        SET         
+        Qty_Ordered = ${qtyOrdered},
+        JWCost = ${jwRate},
+        MtrlCost = ${materialRate},
+        UnitPrice = ${unitPrice},
+        Operation = '${Operation}',
+        InspLevel = '${InspLvl}',
+        PackingLevel = '${PkngLvl}',
+        DwgName = '${DwgName}',
+        Mtrl_Code = '${Mtrl_Code}',
+        Mtrl_Source ='${Mtrl_Source}'
         WHERE Order_No = ${orderNo} 
         AND Order_Srl = ${orderSrl}
       `;
@@ -750,6 +728,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
     const jwRate = parseFloat(req.body.JwCost);
     const materialRate = parseFloat(req.body.mtrlcost);
     const unitPrice = parseFloat(req.body.unitPrice);
+    // const unitPrice = parseFloat(req.body.JwCost) + parseFloat(req.body.mtrlcost) ;
     const Operation = req.body.Operation;
     const InspLvl = req.body.InspLvl;
     const PkngLvl = req.body.PkngLvl;
