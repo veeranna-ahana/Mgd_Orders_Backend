@@ -3,65 +3,96 @@ const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
 //Create Schedule
 ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
-    const deliveryDate = new Date(req.body.OrderData.Delivery_Date);
-    const formattedDeliveryDate = deliveryDate
-      .toISOString()
-      .replace("T", " ")
-      .replace(/\.\d{3}Z$/, "");
-    
-    let query = `select * from magodmis.order_details where Order_No= '${req.body.OrderData.Order_No}'`;
-    try {
-      misQueryMod(query, (err, data) => {
-        if (err) {
-          console.log("Error fetching order details:", err);
-          return res.status(500).json({ message: "Error occurred while fetching order details" });
-        } else {
-          const count = data.length;
-          // console.log("req.body.scheduleOption",req.body.scheduleOption)
-          if ((req.body.scheduleOption==='Full Order'  && count === req.body.selectedItems.length) || req.body.scheduleOption==='Partial Order') {
-            let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
+  // console.log("req.body is", req.body);
+
+  const deliveryDate = new Date(req.body.OrderData.Delivery_Date);
+  const formattedDeliveryDate = deliveryDate
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d{3}Z$/, "");
+
+  let query = `select * from magodmis.order_details where Order_No= '${req.body.OrderData.Order_No}'`;
+  try {
+    misQueryMod(query, (err, data) => {
+      if (err) {
+        console.log("Error fetching order details:", err);
+        return res
+          .status(500)
+          .json({ message: "Error occurred while fetching order details" });
+      } else {
+        const count = data.length;
+        // console.log("req.body.scheduleOption",req.body.scheduleOption)
+        if (
+          (req.body.scheduleOption === "Full Order" &&
+            count === req.body.selectedItems.length) ||
+          req.body.scheduleOption === "Partial Order"
+        ) {
+          let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
                       SalesContact, Dealing_Engineer, ScheduleType, Type, Internal, Schedule_Status,schTgtDate) 
                       VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),'${formattedDeliveryDate}', '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
-            misQuery(insertquery1, (result, err1) => {
-              if (err1) {
-                console.log("Error inserting into orderschedule:", result);
-                return res.status(500).json({ message: "Error occurred while inserting into orderschedule" });
-              } else {
-                const scheduleId = result.insertId; // Get the insertId
-                // Loop through selectedItems array
-                req.body.selectedItems.forEach(selectedItem => {
-                  let inserquery2 = `INSERT INTO magodmis.orderscheduledetails(ScheduleId, OrderDetailID, Order_No,
-                                        Schedule_Srl, Cust_Code, Dwg_Code, DwgName, Mtrl_Code, Operation, MProcess,
-                                        Mtrl_Source, PackingLevel, InspLevel, QtyScheduled, Tolerance, JWCost, MtrlCost, HasBOM)
-                                        VALUES('${scheduleId}', '${selectedItem.OrderDetailId}','${selectedItem.Order_No}',
-                                        '${selectedItem.Order_Srl}','${selectedItem.Cust_Code}','${selectedItem.Dwg}', '${selectedItem.DwgName}', '${selectedItem.Mtrl_Code}', '${selectedItem.Operation}','${selectedItem.MProcess}',
-                                        '${selectedItem.Mtrl_Source}','${selectedItem.PackingLevel}', '${selectedItem.InspLevel}','${selectedItem.Qty_Ordered}','${selectedItem.tolerance}','${selectedItem.JWCost}','${selectedItem.MtrlCost}','${selectedItem.HasBOM}')`;
-                  misQuery(inserquery2, (err2, finalresponse) => {
-                    if (err2) {
-                      // console.log("Error inserting into orderscheduledetails:", err2);
-                      // No need to return a response here, as the insertion is part of a loop
-                      // Simply log the error and continue with the next iteration
-                    } else {
-                    //   console.log("Inserted into orderscheduledetails:", finalresponse);
-                    }
-                  });
+          misQuery(insertquery1, (result, err1) => {
+            if (err1) {
+              console.log("Error inserting into orderschedule:", result);
+              return res
+                .status(500)
+                .json({
+                  message: "Error occurred while inserting into orderschedule",
                 });
-                // Return success response after the loop is finished
-                return res.status(200).json({ message: "Draft Schedule Created" });
-              }
-            });
-          } else {
-            return res.status(200).json({ message: "You do not have any schedulable serial" });
-          }
+            } else {
+              const scheduleId = result.insertId; // Get the insertId
+              // Loop through selectedItems array
+              req.body.selectedItems.forEach((selectedItem) => {
+                // Fetch QtyToSchedule for the current OrderDetailId
+                let selectQtyToScheduleQuery = `SELECT  CAST(o1.Qty_Ordered AS SIGNED) - CAST(o1.QtyScheduled AS SIGNED) AS QtyToSchedule
+                                  FROM  magodmis.Order_details o1 
+                                  WHERE  o1.OrderDetailId='${selectedItem.OrderDetailId}'`;
+
+                misQuery(selectQtyToScheduleQuery, (resultQty, err) => {
+                  if (err) {
+                    console.log("Error fetching QtyToSchedule:", err);
+                    // Handle error if needed
+                  } else {
+                    if (resultQty.length > 0) {
+                      const QtyToSchedule = resultQty[0].QtyToSchedule;
+                      // Now you have QtyToSchedule, use it in inserquery2
+                      let inserquery2 = `INSERT INTO magodmis.orderscheduledetails(ScheduleId, OrderDetailID, Order_No,
+                          Schedule_Srl, Cust_Code, Dwg_Code, DwgName, Mtrl_Code, Operation, MProcess,
+                          Mtrl_Source, PackingLevel, InspLevel, QtyScheduled, Tolerance, JWCost, MtrlCost, HasBOM)
+                          VALUES('${scheduleId}', '${selectedItem.OrderDetailId}','${selectedItem.Order_No}',
+                          '${selectedItem.Order_Srl}','${selectedItem.Cust_Code}','${selectedItem.Dwg}', '${selectedItem.DwgName}', '${selectedItem.Mtrl_Code}', '${selectedItem.Operation}','${selectedItem.MProcess}',
+                          '${selectedItem.Mtrl_Source}','${selectedItem.PackingLevel}', '${selectedItem.InspLevel}','${QtyToSchedule}','${selectedItem.tolerance}','${selectedItem.JWCost}','${selectedItem.MtrlCost}','${selectedItem.HasBOM}')`;
+                      misQuery(inserquery2, (err2, finalresponse) => {
+                        if (err2) {
+                          // console.log("Error inserting into orderscheduledetails:", err2);
+                          // No need to return a response here, as the insertion is part of a loop
+                          // Simply log the error and continue with the next iteration
+                        } else {
+                          //   console.log("Inserted into orderscheduledetails:", finalresponse);
+                        }
+                      });
+                    }
+                  }
+                });
+              });
+              // Return success response after the loop is finished
+              return res
+                .status(200)
+                .json({ message: "Draft Schedule Created" });
+            }
+          });
+        } else {
+          return res
+            .status(200)
+            .json({ message: "You do not have any schedulable serial" });
         }
-      });
-    } catch (error) {
-      console.log("Error:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+      }
+    });
+  } catch (error) {
+    console.log("Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
-  
 ///Suspend Order
 ProductionSchCreationRouter.post(`/suspendOrder`, async (req, res, next) => {
   // console.log("req.body /getFormData is",req.body);
@@ -195,7 +226,9 @@ ProductionSchCreationRouter.post(`/canceltoRecord`, async (req, res, next) => {
 });
 
 //get ScheduleList data based on  Schedule Type
-ProductionSchCreationRouter.post(`/schedulelistbasedonScheduleType`, async (req, res, next) => {
+ProductionSchCreationRouter.post(
+  `/schedulelistbasedonScheduleType`,
+  async (req, res, next) => {
     // console.log("scheduleType",req.body.scheduleType,req.body.OrderData.Order_No)
     let query = `Select * from  magodmis.orderschedule WHERE Order_No='${req.body.OrderData.Order_No}' and ScheduleType='${req.body.scheduleType}'`;
     try {
@@ -204,13 +237,13 @@ ProductionSchCreationRouter.post(`/schedulelistbasedonScheduleType`, async (req,
           console.log("err", err);
         } else {
           res.send(data);
-        //   console.log("data is",data);
+          //   console.log("data is",data);
         }
       });
     } catch (error) {
       next(error);
     }
-  });
-  
+  }
+);
 
 module.exports = ProductionSchCreationRouter;
