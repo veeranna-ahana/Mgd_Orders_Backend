@@ -276,7 +276,6 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
   }
 });
 
-
 //Release Button
 ScheduleListRouter.post(`/releaseClick`, async (req, res, next) => {
   try {
@@ -298,7 +297,9 @@ ScheduleListRouter.post(`/releaseClick`, async (req, res, next) => {
             console.log("err", err);
             return res.status(500).json({ error: "Internal Server Error" });
           } else {
-            return res.status(200).json({ message: "Schedule status updated successfully" });
+            return res
+              .status(200)
+              .json({ message: "Schedule status updated successfully" });
           }
         });
       }
@@ -307,8 +308,6 @@ ScheduleListRouter.post(`/releaseClick`, async (req, res, next) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-
 
 //Button ShortClose
 ScheduleListRouter.post(`/shortClose`, async (req, res, next) => {
@@ -616,9 +615,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                               });
                             });
 
-                            let updateQuery2 = `UPDATE orderschedule SET Schedule_status='Tasked', 
-                                              schTgtDate='${formattedDate}', ScheduleDate=now(),ordschno='${req.body.formdata[0].OrdSchNo}' 
-                                              WHERE ScheduleID='${req.body.formdata[0].ScheduleId}'`;
+                            
 
                             let updateQuery3 = `UPDATE magodmis.order_list o SET o.ScheduleCount='${scheduleCount}' WHERE o.Order_No='${req.body.formdata[0].Order_No}';`;
 
@@ -653,12 +650,23 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                   }
 
                                   let neworderSch = `${req.body.formdata[0].Order_No} ${nextSRL}`;
-                                  
-                                  console.log("neworderSch is",neworderSch,"nextSRL is",nextSRL,"ScheduleId is",req.body.formdata[0].ScheduleId);
+
+                                  // console.log(
+                                  //   "neworderSch is",
+                                  //   neworderSch,
+                                  //   "nextSRL is",
+                                  //   nextSRL,
+                                  //   "ScheduleId is",
+                                  //   req.body.formdata[0].ScheduleId
+                                  // );
 
                                   let updateSRLQuery = `UPDATE magodmis.orderschedule 
-                                     SET  OrdSchNo='${neworderSch}' 
+                                     SET OrdSchNo='${neworderSch}',ScheduleNo='${nextSRL}'
                                       WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+                                      let updateQuery2 = `UPDATE orderschedule SET Schedule_status='Tasked', 
+                                              schTgtDate='${formattedDate}', ScheduleDate=now(),OrdSchNo='${neworderSch}'
+                                              WHERE ScheduleID='${req.body.formdata[0].ScheduleId}'`;
 
                                   misQueryMod(
                                     updateSRLQuery,
@@ -672,7 +680,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                           error: "Internal Server Error",
                                         });
                                       } else {
-                                        console.log("result is",result4);
+                                        console.log("result is", result4);
                                         misQueryMod(
                                           updateQuery2,
                                           (err, result2) => {
@@ -721,37 +729,22 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                                                 "Internal Server Error",
                                                             });
                                                         } else {
-                                                          const taskNumbers =
-                                                            {}; // Object to store task numbers for each combination
-                                                          let taskNumberCounter = 1; // Counter for generating task numbers
+                                                          const taskNumbers = {}; // Object to store task numbers for each combination
+let taskNumberCounter = 0; // Counter for generating task numbers
 
-                                                          // Iterate through scheduleDetails to generate and update task numbers
-                                                          scheduleDetails.forEach(
-                                                            (row) => {
-                                                              // Construct a unique key based on Mtrl_Code, MProcess, and Operation
-                                                              const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
-                                                              // console.log(key);
+// Iterate through scheduleDetails to generate and update task numbers
+scheduleDetails.forEach((row) => {
+    // Increment the task number counter for each row
+    taskNumberCounter++;
 
-                                                              // Initialize task number if it doesn't exist for this key
-                                                              if (
-                                                                !taskNumbers.hasOwnProperty(
-                                                                  key
-                                                                )
-                                                              ) {
-                                                                taskNumbers[
-                                                                  key
-                                                                ] =
-                                                                  taskNumberCounter
-                                                                    .toString()
-                                                                    .padStart(
-                                                                      2,
-                                                                      "0"
-                                                                    ); // Start with task number 01 for this key
-                                                                taskNumberCounter++; // Increment the task number counter
-                                                              }
+    // Construct a unique key based on Mtrl_Code, MProcess, and Operation
+    const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
 
-                                                              // Generate the task number with the format "neworderSch taskNumber"
-                                                              const TaskNo = `${neworderSch} ${taskNumbers[key]}`;
+    // Generate the task number with the format "neworderSch taskNumber"
+    const TaskNo = `${neworderSch} ${taskNumberCounter.toString().padStart(2, "0")}`;
+
+                                                          
+                                                            // console.log("TaskNo",TaskNo);
 
                                                               // Insert into magodmis.nc_task_list table
                                                               let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
@@ -1175,26 +1168,46 @@ ScheduleListRouter.post(`/createProfileOrder`, async (req, res, next) => {
   }
 });
 
-
 // Print PDF ScheduleList
 ScheduleListRouter.post(`/PrintPdf`, async (req, res, next) => {
   try {
     let query = `SELECT * FROM magodmis.orderscheduledetails where ScheduleId='${req.body.formdata[0].ScheduleId}';`;
-    
+
     misQueryMod(query, (err, data) => {
       if (err) {
         console.log("err", err);
-        res.status(500).send({ error: "An error occurred while fetching data" });
+        res
+          .status(500)
+          .send({ error: "An error occurred while fetching data" });
       } else {
         if (data.length > 0) {
-          // Assuming `taskno` is a property in the data fetched from the database
-          const formattedData = {
-            taskNo: data[0].taskno,
-            otherdetails: data // Assuming other details are returned from the query
-          };
+          // Group data by task number
+          const groupedData = {};
+          data.forEach((item) => {
+            const TaskNo = item.TaskNo;
+            if (!groupedData[TaskNo]) {
+              groupedData[TaskNo] = [];
+            }
+            groupedData[TaskNo].push(item);
+          });
+
+          // Format grouped data
+          const formattedData = [];
+          for (const TaskNo in groupedData) {
+            formattedData.push({
+              taskNo: TaskNo,
+              Mtrl_Code: groupedData[TaskNo][0].Mtrl_Code,
+              Mtrl_Source: groupedData[TaskNo][0].Mtrl_Source,
+              Operation: groupedData[TaskNo][0].Operation,
+              otherdetails: groupedData[TaskNo],
+            });
+          }
+
           res.send(formattedData);
         } else {
-          res.status(404).send({ error: "No data found for the provided ScheduleId" });
+          res
+            .status(404)
+            .send({ error: "No data found for the provided ScheduleId" });
         }
       }
     });
@@ -1202,8 +1215,6 @@ ScheduleListRouter.post(`/PrintPdf`, async (req, res, next) => {
     next(error);
   }
 });
-
-
 
 //getCustomerName
 ScheduleListRouter.post(`/getCustomerName`, async (req, res, next) => {
