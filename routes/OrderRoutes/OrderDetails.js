@@ -76,7 +76,6 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
                 MtrlCost,
                 Dwg,
              tolerance,
-             UnitPrice,
              HasBOM
 
               ) VALUES (
@@ -96,7 +95,6 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
                 ${parseFloat(req.body.requestData.mtrlcost)},
                 ${req.body.requestData.dwg},
                 '${req.body.requestData.tolerance}',
-                '${parseFloat(req.body.requestData.JwCost) +parseFloat(req.body.requestData.mtrlcost)}',
                 ${req.body.requestData.HasBOM}
 
               )`,
@@ -104,7 +102,6 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
                 if (err) {
                   logger.error(err);
                 } else {
-                  
                   res.send(srldata);
                 }
               }
@@ -117,7 +114,6 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
 });
 
 OrderDetailsRouter.post(`/getbomdata`, async (req, res, next) => {
-  
   try {
     misQueryMod(
       // `SELECT *
@@ -473,6 +469,45 @@ OrderDetailsRouter.post(`/getQtnDataByQtnID`, async (req, res, next) => {
 });
 
 OrderDetailsRouter.post(
+  `/getOldOrderByCustCodeAndOrderNo`,
+  async (req, res, next) => {
+    // console.log("req.body", req.body);
+    try {
+      misQueryMod(
+        `SELECT * FROM magodmis.order_list WHERE Cust_Code = '${req.body.Cust_Code}' AND Order_No != '${req.body.Order_No}' ORDER BY Order_No DESC`,
+        (err, orderListData) => {
+          if (err) {
+            res.status(500).send("Internal Server Error");
+          } else {
+            try {
+              misQueryMod(
+                `SELECT * FROM magodmis.order_details WHERE Cust_Code = '${req.body.Cust_Code}' AND Order_No != '${req.body.Order_No}' ORDER BY Order_Srl`,
+                (err, orderDetailsData) => {
+                  if (err) {
+                    res.status(500).send("Internal Server Error");
+                  } else {
+                    // console.log("orderListData", orderListData);
+                    // console.log("orderDetailsData", orderDetailsData);
+                    res.send({
+                      orderListData: orderListData,
+                      orderDetailsData: orderDetailsData,
+                    });
+                  }
+                }
+              );
+            } catch (error) {
+              next(error);
+            }
+          }
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+OrderDetailsRouter.post(
   `/postDeleteDetailsByOrderNo`,
   async (req, res, next) => {
     // console.log("req.body", req.body.Order_No);
@@ -484,7 +519,7 @@ OrderDetailsRouter.post(
             res.status(500).send("Internal Server Error");
           } else {
             // console.log("deleteOrderData", deleteOrderData);
-            res.send(deleteOrderData);
+            res.send({ deleteOrderData: deleteOrderData, flag: 1 });
           }
         }
       );
@@ -541,7 +576,7 @@ OrderDetailsRouter.post(
 //   console.log("enter into bulkChangeUpdate")
 //   console.log("req...",req.body)
 //   const orderSrlArray = req.body.OrderSrl;
-//   const promises = []; 
+//   const promises = [];
 
 // const orderNo = req.body.OrderNo;
 // const quantity = parseInt(req.body.quantity);
@@ -562,7 +597,7 @@ OrderDetailsRouter.post(
 //    MtrlCost = CASE WHEN ${materialRate} IS NOT NULL THEN ${materialRate} ELSE MtrlCost END,
 //     UnitPrice = CASE WHEN ${unitPrice} IS NOT NULL THEN ${unitPrice} ELSE UnitPrice END,
 //     Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}'
-   
+
 //   WHERE Order_No = ${req.body.OrderNo} AND Order_Srl = ${req.body.OrderSrl}
 // `;
 //     const updatePromise = new Promise((resolve, reject) => {
@@ -572,7 +607,7 @@ OrderDetailsRouter.post(
 //       return next(err);
 //     } else {
 //       console.log("blkcngdata", blkcngdata);
-//       resolve(blkcngdata); 
+//       resolve(blkcngdata);
 //     }
 //   });})
 //   promises.push(updatePromise);
@@ -587,7 +622,6 @@ OrderDetailsRouter.post(
 //   });
 // });
 
-
 // OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 //   console.log("enter into bulkChangeUpdate");
 //   console.log("req...", req.body);
@@ -597,7 +631,7 @@ OrderDetailsRouter.post(
 
 //   const orderNo = req.body.OrderNo;
 //   const quantity = parseInt(req.body.quantity);
-  
+
 //   for (const orderSrl of orderSrlArray) {
 //     const qtyOrdered = parseInt(req.body.quantity);
 //     const jwRate = parseFloat(req.body.JwCost);
@@ -607,7 +641,7 @@ OrderDetailsRouter.post(
 //     const InspLvl = req.body.InspLvl;
 //     const PkngLvl = req.body.PkngLvl;
 //     const DwgName = req.body.DwgName;
-    
+
 //     console.log("Variables:", qtyOrdered, jwRate, materialRate, unitPrice, Operation, InspLvl, PkngLvl, DwgName, orderNo, orderSrl);
 
 //     const updateQuery = `
@@ -620,7 +654,7 @@ OrderDetailsRouter.post(
 //         Operation = '${Operation}', InspLevel='${InspLvl}', PackingLevel='${PkngLvl}', DwgName='${DwgName}'
 //       WHERE Order_No = ${orderNo} AND Order_Srl = ${orderSrl}
 //     `;
-    
+
 //     const updatePromise = new Promise((resolve, reject) => {
 //       misQueryMod(updateQuery, (err, blkcngdata) => {
 //         if (err) {
@@ -646,53 +680,46 @@ OrderDetailsRouter.post(
 //     });
 // });
 
-
 OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
   console.log("enter into bulkChangeUpdate");
-  const selectdArray = req.body.selectedItems;
   const orderSrlArray = req.body.OrderSrl;
+  console.log("orderSrlArray", orderSrlArray);
   const orderNo = req.body.OrderNo;
-  console.log("req.body.quantity",req.body.quantity)
-
-  let completedUpdates = 0; 
-  for (let i = 0; i < selectdArray.length; i++) {
-    const orderSrl = selectdArray[i].Order_Srl;
-    const blkCngCheckBoxValue = req.body.blkCngCheckBox;
-  console.log("selectdArray[i]. Qty_Ordered",selectdArray[i]. Qty_Ordered)
-    
-
-    DwgName = blkCngCheckBoxValue[0] ? req.body.DwgName : selectdArray[i].DwgName;
-    Mtrl_Code = blkCngCheckBoxValue[1] ? req.body.strmtrlcode : selectdArray[i].Mtrl_Code;
-    Mtrl_Source = blkCngCheckBoxValue[2] ? req.body.MtrlSrc : selectdArray[i].Mtrl_Source;
-    Operation = blkCngCheckBoxValue[3] ? req.body.Operation : selectdArray[i].Operation;
-    qtyOrdered = blkCngCheckBoxValue[4] ? req.body.quantity : selectdArray[i]. Qty_Ordered;
-    jwRate = blkCngCheckBoxValue[5] ? req.body.JwCost : selectdArray[i].JWCost;
-    unitPrice = blkCngCheckBoxValue[6] ? req.body.unitPrice : selectdArray[i].UnitPrice;
-    materialRate = blkCngCheckBoxValue[7] ? req.body.mtrlcost : selectdArray[i].MtrlCost;
-    InspLvl = blkCngCheckBoxValue[8] ? req.body.InspLvl : selectdArray[i].InspLevel;
-    PkngLvl = blkCngCheckBoxValue[9] ? req.body.PkngLvl : selectdArray[i].PackingLevel;
+  let completedUpdates = 0; // Counter for completed updates
+  for (let i = 0; i < orderSrlArray.length; i++) {
+    const orderSrl = orderSrlArray[i];
+    const blkCngCheckBoxValue = req.body.blkCngCheckBox[i];
+    console.log("blkCngCheckBoxValue", blkCngCheckBoxValue);
+    if (blkCngCheckBoxValue) {
+      // Only proceed with update if blkCngCheckBox is true
+      const qtyOrdered = parseInt(req.body.quantity);
+      const jwRate = parseFloat(req.body.JwCost);
+      const materialRate = parseFloat(req.body.mtrlcost);
+      const unitPrice = parseFloat(req.body.unitPrice);
+      const Operation = req.body.Operation;
+      const InspLvl = req.body.InspLvl;
+      const PkngLvl = req.body.PkngLvl;
+      const DwgName = req.body.DwgName;
 
       const updateQuery = `
         UPDATE magodmis.order_details
-        SET         
-        Qty_Ordered = ${qtyOrdered},
-        JWCost = ${jwRate},
-        MtrlCost = ${materialRate},
-        UnitPrice = ${unitPrice},
-        Operation = '${Operation}',
-        InspLevel = '${InspLvl}',
-        PackingLevel = '${PkngLvl}',
-        DwgName = '${DwgName}',
-        Mtrl_Code = '${Mtrl_Code}',
-        Mtrl_Source ='${Mtrl_Source}'
+        SET
+          Qty_Ordered = ${qtyOrdered},
+          JWCost = ${jwRate},
+          MtrlCost = ${materialRate},
+          UnitPrice = ${unitPrice},
+          Operation = '${Operation}',
+          InspLevel = '${InspLvl}',
+          PackingLevel = '${PkngLvl}',
+          DwgName = '${DwgName}'
         WHERE Order_No = ${orderNo} 
         AND Order_Srl = ${orderSrl}
       `;
-  
+
       misQueryMod(updateQuery, (err, blkcngdata) => {
         if (err) {
           logger.error(err);
-          // reject(err);
+          reject(err);
         } else {
           console.log("blkcngdata", blkcngdata);
           completedUpdates++; // Increment completed updates counter
@@ -702,38 +729,75 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
           }
         }
       });
-    // } else {
-    //   // If blkCngCheckBox is false, skip the update but still increment completedUpdates
-    //   completedUpdates++;
-    //   if (completedUpdates === orderSrlArray.length) {
-    //     // If all updates are completed, send the response
-    //     res.send({ message: "No updates performed." });
-    //   }
-    // }
+    } else {
+      // If blkCngCheckBox is false, skip the update but still increment completedUpdates
+      completedUpdates++;
+      if (completedUpdates === orderSrlArray.length) {
+        // If all updates are completed, send the response
+        res.send({ message: "No updates performed." });
+      }
+    }
   }
-  
-  
-  });
-  
 
+  // for (const orderSrl of orderSrlArray) {
+  //   const qtyOrdered = parseInt(req.body.quantity);
+  //   const jwRate = parseFloat(req.body.JwCost);
+  //   const materialRate = parseFloat(req.body.mtrlcost);
+  //   const unitPrice = parseFloat(req.body.unitPrice);
+  //   const Operation = req.body.Operation;
+  //   const InspLvl = req.body.InspLvl;
+  //   const PkngLvl = req.body.PkngLvl;
+  //   const DwgName = req.body.DwgName;
+  //   const blkCngCheckBox = req.body.blkCngCheckBox;
+  //   console.log("orderNo....,",orderNo)
+  //   console.log("Operation....,",Operation)
+  //   console.log("blkCngCheckBox....,",blkCngCheckBox)
 
+  //   const updateQuery = `
+  //   UPDATE magodmis.order_details
+  //   SET
+  //     Qty_Ordered = ${qtyOrdered},
+  //     JWCost = ${jwRate},
+  //     MtrlCost = ${materialRate},
+  //     UnitPrice = ${unitPrice},
+  //     Operation = '${Operation}',
+  //     InspLevel = '${InspLvl}',
+  //     PackingLevel = '${PkngLvl}',
+  //     DwgName = '${DwgName}'
+  //   WHERE Order_No = ${orderNo}
+  //   AND Order_Srl = ${orderSrl}
 
+  // `;
+
+  //     misQueryMod(updateQuery, (err, blkcngdata) => {
+  //       if (err) {
+  //         logger.error(err);
+  //         reject(err);
+  //       } else {
+  //         console.log("blkcngdata", blkcngdata);
+  //         completedUpdates++; // Increment completed updates counter
+  //         if (completedUpdates === orderSrlArray.length) {
+  //           // If all updates are completed, send the response
+  //           res.send(blkcngdata);
+  //         }
+  //       }
+  //     });
+  //   }
+});
 
 OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
-   console.log("enter into singleChangeUpdate")
-  console.log("req...",req.body)
- 
+  console.log("enter into singleChangeUpdate");
+  console.log("req...", req.body);
+
   try {
     const qtyOrdered = parseInt(req.body.quantity);
     const jwRate = parseFloat(req.body.JwCost);
     const materialRate = parseFloat(req.body.mtrlcost);
     const unitPrice = parseFloat(req.body.unitPrice);
-    // const unitPrice = parseFloat(req.body.JwCost) + parseFloat(req.body.mtrlcost) ;
     const Operation = req.body.Operation;
     const InspLvl = req.body.InspLvl;
     const PkngLvl = req.body.PkngLvl;
     const DwgName = req.body.DwgName;
-    const MtrlSrc = req.body.MtrlSrc;
 
     const updateQuery = `
     UPDATE magodmis.order_details
@@ -742,7 +806,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
       JWCost = CASE WHEN ${jwRate} IS NOT NULL THEN ${jwRate} ELSE JWCost END,
      MtrlCost = CASE WHEN ${materialRate} IS NOT NULL THEN ${materialRate} ELSE MtrlCost END,
       UnitPrice = CASE WHEN ${unitPrice} IS NOT NULL THEN ${unitPrice} ELSE UnitPrice END,
-      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}',Mtrl_Source='${MtrlSrc}'
+      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}'
      
     WHERE Order_No = ${req.body.OrderNo} AND Order_Srl = ${req.body.OrderSrl}
   `;
@@ -753,14 +817,12 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
         return next(err);
       } else {
         console.log("blkcngdata", singlecngdata);
-        res.send(singlecngdata);  
+        res.send(singlecngdata);
       }
     });
   } catch (error) {
     next(error);
   }
 });
-   
-
 
 module.exports = OrderDetailsRouter;
