@@ -262,6 +262,7 @@ NCprogramRoter.post(`/ButtonSave`, async (req, res, next) => {
 
 //getNCProram Parts Data
 NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
+    console.log("req.body",req.body);
     let queryCheckBOM = `SELECT t.HasBOM FROM magodmis.task_partslist t WHERE t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}'`;
   
     try {
@@ -273,9 +274,11 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
   
         if (bomData && bomData.length > 0 && bomData[0].HasBOM === 1) {
           // Execute query when HasBOM is 1 (true)
-          let query = `SELECT o.DwgName as PartID, 1 as QtyPerAssy, c.Id as CustBOM_Id, t.Task_Part_ID, t.QtyToNest as QtyRequired 
-                       FROM magodmis.task_partslist t, magodmis.orderscheduledetails o, magodmis.cust_bomlist c 
-                       WHERE o.SchDetailsID = t.SchDetailsId AND t.NcTaskId = '${req.body.NcTaskId}' AND c.MagodPartId = o.Dwg_Code`;
+          let query = `SELECT c2.PartId, c1.Quantity as QtyPerAssy, c2.Id As CustBOM_Id, t.Task_Part_ID, t.QtyNested * c1.Quantity as QtyRequired 
+                       FROM magodmis.task_partslist t, magodmis.orderscheduledetails o, magodmis.cust_assy_data c,
+                            magodmis.cust_assy_bom_list c1, magodmis.cust_bomlist c2 
+                       WHERE t.NcTaskId='${req.body.NCprogramForm[0].NcTaskId}' AND t.HasBOM AND t.SchDetailsId=o.SchDetailsID
+                       AND c.MagodCode = o.Dwg_Code AND c1.Cust_AssyId=c.Id AND c1.Cust_BOM_ListId=c2.Id`;
   
           misQueryMod(query, (err, data) => {
             if (err) {
@@ -306,7 +309,37 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
           });
         } else {
           // Handle case when HasBOM is not 1 (false)
-          res.send({ message: "No BOM found for the given NcTaskId" });
+          let query = `SELECT o.DwgName as PartID, 1 as QtyPerAssy, c.Id as CustBOM_Id, t.Task_Part_ID, t.QtyToNest as QtyRequired 
+                       FROM magodmis.task_partslist t, magodmis.orderscheduledetails o, magodmis.cust_bomlist c 
+                       WHERE o.SchDetailsID = t.SchDetailsId AND t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}' AND c.MagodPartId = o.Dwg_Code`;
+  
+          misQueryMod(query, (err, data) => {
+            if (err) {
+              console.log("Error executing query:", err);
+              return next(err);
+            }
+            
+            // Extracting CustBOM_Id from the result
+            const custBOMIds = data.map(entry => entry.CustBOM_Id).join("','");
+  
+            // Additional query to calculate quantity available
+            let additionalQuery = `SELECT SUM(CAST(m.QtyAccepted - m.QtyIssued AS SIGNED)) AS QtyAvailable 
+                                   FROM magodmis.mtrl_part_receipt_details m 
+                                   WHERE m.CustBOM_Id IN ('${custBOMIds}')`;
+  
+            misQueryMod(additionalQuery, (err, additionalData) => {
+              if (err) {
+                console.log("Error executing additional query:", err);
+                return next(err);
+              }
+              // Combining data from both queries
+              const responseData = {
+                partsData: data,
+                availableQty: additionalData[0].QtyAvailable
+              };
+              res.send(responseData);
+            });
+          });
         }
       });
     } catch (error) {
@@ -314,7 +347,7 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
       next(error);
     }
   });
-  
+
 
 
 module.exports = NCprogramRoter;
