@@ -80,8 +80,9 @@ let createFolder = async (SrlType, qno, month, callback) => {
       case "Order": {
         await fs.exists(folderBase + `/Wo/${qno}`, async (exists) => {
           if (!exists) {
-            console.log("creating a folder.....")
+            
             await fs.mkdirSync(folderBase + `/Wo/${qno}`);
+            console.log("creating a folder.....")
           }
         });
         break;
