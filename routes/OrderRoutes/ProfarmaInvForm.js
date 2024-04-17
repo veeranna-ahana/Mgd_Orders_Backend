@@ -298,18 +298,112 @@ ProfarmaInvFormRouter.post("/postSaveInvoice", async (req, res, next) => {
   }
 });
 
+// ProfarmaInvFormRouter.post(
+//   "/postInvFormCreateInvoice",
+//   async (req, res, next) => {
+//     //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
+//     try {
+//       misQueryMod(
+//         `UPDATE magodmis.profarma_main SET ProformaInvNo = '${req.body.series}', ProformaDate = now(), Status='Invoiced' WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
+//         (err, data) => {
+//           if (err) {
+//             console.log(err);
+//           } else {
+//             res.send(data);
+//           }
+//         }
+//       );
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
+
 ProfarmaInvFormRouter.post(
   "/postInvFormCreateInvoice",
   async (req, res, next) => {
-    //   console.log("req.body.ProfarmaID", req.body.ProfarmaID);
+    // const DCStatus = "Dispatched";
+
     try {
       misQueryMod(
-        `UPDATE magodmis.profarma_main SET ProformaInvNo = '${req.body.series}', ProformaDate = now(), Status='Invoiced' WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
-        (err, data) => {
+        `SELECT 
+          *
+        FROM
+          magod_setup.year_prefix_suffix
+        WHERE
+          UnitName = '${req.body.runningNoData.UnitName}' AND SrlType = '${req.body.runningNoData.SrlType}'`,
+        (err, yearPrefixSuffixData) => {
           if (err) {
-            console.log(err);
+            logger.error(err);
           } else {
-            res.send(data);
+            // console.log("yearPrefixSuffixData", yearPrefixSuffixData[0]);
+
+            misQueryMod(
+              `SELECT * FROM magod_setup.magod_runningno WHERE Id = '${req.body.runningNoData.Id}'`,
+              (err, runningNoData) => {
+                if (err) {
+                  logger.error(err);
+                } else {
+                  let newRunningNo = (
+                    parseInt(runningNoData[0].Running_No) + 1
+                  ).toString();
+
+                  for (let i = 0; i < runningNoData[0].Length; i++) {
+                    // const element = newRunningNo[i];
+
+                    if (newRunningNo.length < runningNoData[0].Length) {
+                      newRunningNo = 0 + newRunningNo;
+                    }
+                  }
+                  let newRunningNoWithPS =
+                    (yearPrefixSuffixData[0].Prefix || "") +
+                    newRunningNo +
+                    (yearPrefixSuffixData[0].Suffix || "");
+
+                  // console.log("newRunningNo", newRunningNo);
+                  // console.log("newRunningNoWithPS", newRunningNoWithPS);
+
+                  let newRunningNoWithPSAndFin =
+                    runningNoData[0].Period + "/" + newRunningNoWithPS;
+
+                  // update register
+
+                  try {
+                    misQueryMod(
+                      `UPDATE magodmis.profarma_main SET ProformaInvNo = '${newRunningNoWithPSAndFin}', ProformaDate = now(), Status='Invoiced' WHERE (ProfarmaID = '${req.body.ProfarmaID}')`,
+                      (err, data) => {
+                        if (err) {
+                          console.log(err);
+                        } else {
+                          misQueryMod(
+                            `UPDATE magod_setup.magod_runningno SET Running_No = '${parseInt(
+                              newRunningNo
+                            )}', Prefix = '${
+                              yearPrefixSuffixData[0].Prefix || ""
+                            }', Suffix = '${
+                              yearPrefixSuffixData[0].Suffix || ""
+                            }' WHERE (Id = '${req.body.runningNoData.Id}')`,
+                            (err, updateRunningNo) => {
+                              if (err) {
+                                logger.error(err);
+                              } else {
+                                console.log("updated running no");
+                                res.send({
+                                  flag: true,
+                                  message: "Proforma Invoice Created",
+                                });
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  } catch (error) {
+                    next(error);
+                  }
+                }
+              }
+            );
           }
         }
       );
