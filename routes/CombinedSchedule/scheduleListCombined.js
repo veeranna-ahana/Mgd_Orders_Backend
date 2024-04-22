@@ -27,9 +27,9 @@ scheduleListCombined.get('/ScheduleListOrdered', jsonParser, async (req, res, ne
     }
   });
 
+
   scheduleListCombined.get('/ScheduleListOrderedSales', jsonParser, async (req, res, next) => {
     try {
-  
       mchQueryMod(`SELECT o.*, c.Cust_name,c1.cmbSchID 
       FROM  magodmis.orderschedule o,magodmis.cust_data c,magodmis.combined_schedule c1 
       WHERE o.ScheduleType='Combined' AND OrdSchNo LIKE '88%' 
@@ -86,7 +86,7 @@ scheduleListCombined.get('/ScheduleListOrdered', jsonParser, async (req, res, ne
   scheduleListCombined.post('/scheduleListDetails', jsonParser, async (req, res, next) => {
     // console.log("req.ody",req.body)
     try {
-      mchQueryMod(`SELECT o1.*, c.cmbSchId, o.SchDetailsID, o.Schedule_Srl, o.DwgName, o.Mtrl_Code, o.MProcess, o.Mtrl_Source, o.QtyScheduled, o.QtyProgrammed, o.QtyProduced, o.QtyInspected, o.QtyCleared,o.Rejections, o.Tester, o.LOC, o.Holes, o.Part_Area, o.UnitWt, o.Operation,(SELECT COUNT(*) FROM magodmis.combined_schedule_details c JOIN magodmis.orderschedule o1 ON c.scheduleId = o1.ScheduleID JOIN magodmis.orderscheduledetails o ON c.scheduleId = o.ScheduleID WHERE c.cmbSchId = '22334') AS TotalRows
+      mchQueryMod(`SELECT o1.*, c.cmbSchId, o.SchDetailsID, o.Schedule_Srl, o.DwgName, o.Mtrl_Code, o.MProcess, o.Mtrl_Source, o.QtyScheduled, o.QtyProgrammed, o.QtyProduced, o.QtyInspected, o.QtyCleared,o.Rejections, o.Tester, o.LOC, o.Holes, o.Part_Area, o.UnitWt, o.Operation,(SELECT COUNT(*) FROM magodmis.combined_schedule_details c JOIN magodmis.orderschedule o1 ON c.scheduleId = o1.ScheduleID JOIN magodmis.orderscheduledetails o ON c.scheduleId = o.ScheduleID WHERE c.cmbSchId = '${req.body.selectedRow.cmbSchID}') AS TotalRows
      FROM  magodmis.combined_schedule_details c JOIN magodmis.orderschedule o1 ON c.scheduleId = o1.ScheduleID JOIN magodmis.orderscheduledetails o ON c.scheduleId = o.ScheduleID WHERE c.cmbSchId = '${req.body.selectedRow.cmbSchID}'`, (err, data) => {
         if (err) logger.error(err);
         //console.log(data)
