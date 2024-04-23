@@ -2,7 +2,7 @@ const ProductionSchCreationRouter = require("express").Router();
 const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
 //Create Schedule
-ProductionSchCreationRouter.post(`/createSchedule`, async (req, res, next) => {
+ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, next) => {
   // console.log("req.body is", req.body);
 
   const deliveryDate = new Date(req.body.OrderData.Delivery_Date);
@@ -229,7 +229,7 @@ ProductionSchCreationRouter.post(`/canceltoRecord`, async (req, res, next) => {
 ProductionSchCreationRouter.post(
   `/schedulelistbasedonScheduleType`,
   async (req, res, next) => {
-    // console.log("scheduleType",req.body.scheduleType,req.body.OrderData.Order_No)
+    console.log("scheduleType",req.body.scheduleType,req.body.OrderData.Order_No)
     let query = `Select * from  magodmis.orderschedule WHERE Order_No='${req.body.OrderData.Order_No}' and ScheduleType='${req.body.scheduleType}'`;
     try {
       misQueryMod(query, (err, data) => {
