@@ -117,9 +117,6 @@ let misQueryMod = async (q, callback) => {
   }
 };
 
-
-
-
 // const misQueryMod = async (q, values) => {
 //   misConn.connect();
 //   try {

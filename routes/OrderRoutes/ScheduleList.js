@@ -69,7 +69,7 @@ ScheduleListRouter.post(`/shiftDetails`, async (req, res, next) => {
 
 //Task and  Material List
 ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
-  // console.log("req.body is",req.body);
+  console.log("req.body is",req.body.scheduleDetailsRow.NcTaskId);
   let query = `SELECT * FROM magodmis.nc_task_list where NcTaskId='${req.body.scheduleDetailsRow.NcTaskId}';
     `;
 
@@ -615,9 +615,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                               });
                             });
 
-                            
-
-                            let updateQuery3 = `UPDATE magodmis.order_list o SET o.ScheduleCount='${scheduleCount}' WHERE o.Order_No='${req.body.formdata[0].Order_No}';`;
+                            let updateQuery3 = `UPDATE magodmis.order_list o SET o.ScheduleCount='${scheduleCount}' WHERE o.Order_No='${req.body.formdata[0].Order_No}'`;
 
                             let selectSRLQuery = `SELECT ScheduleNo FROM magodmis.orderschedule WHERE Order_No='${req.body.formdata[0].Order_No}'`;
 
