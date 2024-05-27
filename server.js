@@ -36,6 +36,12 @@ const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
+const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
+const CombinedScheduleCreate = require('./routes/CombinedSchedule/CombinedScheduleCreate');
+const scheduleListCombined = require('./routes/CombinedSchedule/scheduleListCombined');
+const ProductionSchCreationRouter=require('./routes/OrderRoutes/ProductionSchCreation');
+const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -68,6 +74,12 @@ app.use("/analysis", analysisRouter);
 app.use("/accounts", accountsRouter);
 app.use("/file", fileRouter);
 app.use("/orderList", orderListRouter);
+app.use("/ScheduleList", ScheduleListRouter);
+app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
+app.use("/scheduleListCombined", scheduleListCombined);
+app.use("/productionSchCreation",ProductionSchCreationRouter);
+app.use("/NCProgram",NCProgramRouter);
+
 // app.use(fileUpload());
 
 app.use((err, req, res, next) => {

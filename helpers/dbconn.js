@@ -1,8 +1,11 @@
 var mysql = require("mysql2");
-require("dotenv").config();
+require("dotenv").config({ path: "./vars/.env" });
+// dotenv
 
+// console.log("process.env.DB_HOST", env);
 const dbHost = process.env.DB_HOST;
 const dbUser = process.env.DB_USER;
+const dbPort = process.env.DB_PORT;
 const dbPassword = process.env.DB_PASSWORD;
 const dbDatabase1 = process.env.DB_DATABASE_1; //magodmis
 const dbDatabase2 = process.env.DB_DATABASE_2; //magod_setup
@@ -14,54 +17,49 @@ const dbDatabase6 = process.env.DB_DATABASE_6; //magod_mtrl
 var misConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase1,
-  port:3310
 });
 
 var setupConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase2,
-  port:3310,
-  
 });
 
 var qtnConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase3,
-  port:3310
-
 });
 
 var mchConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase4,
-  port:3310
-
 });
 
 var slsConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase5,
-  port:3310
-
 });
 
 var mtrlConn = mysql.createConnection({
   host: dbHost,
   user: dbUser,
+  port: dbPort,
   password: dbPassword,
   database: dbDatabase6,
-  port:3310
-
 });
 
 let misQuery = async (q, callback) => {
