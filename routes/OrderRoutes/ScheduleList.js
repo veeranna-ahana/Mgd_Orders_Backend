@@ -69,7 +69,7 @@ ScheduleListRouter.post(`/shiftDetails`, async (req, res, next) => {
 
 //Task and  Material List
 ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
-  console.log("req.body is",req.body.scheduleDetailsRow.NcTaskId);
+  // console.log("req.body is",req.body.scheduleDetailsRow.NcTaskId);
   let query = `SELECT * FROM magodmis.nc_task_list where NcTaskId='${req.body.scheduleDetailsRow.NcTaskId}';
     `;
 
@@ -975,7 +975,31 @@ function executeSecondQuery(scheduleId, callback) {
   misQueryMod(query, callback);
 }
 
-// Fixture Order
+//Check if Fixture Orders Exists or not
+ScheduleListRouter.post(`/checkFixtureOrder`, async (req, res, next) => {
+  let query = `SELECT * FROM magodmis.order_list i WHERE i.ScheduleId ='${req.body.formdata[0].ScheduleId}' AND i.\`Order-Ref\`='Fixture'`;
+
+  try {
+    misQueryMod(query, (err, data) => {
+      if (err) {
+        console.log("err", err);
+        return res.status(500).send("Error checking fixture order");
+      } else {
+        // Send the data along with a status indicating true or false
+        if (data.length > 0) {
+          res.send({ status: true, data });
+        } else {
+          res.send({ status: false, data: null });
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+// Fixture Order Creation
 ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
   // Assuming req.body.formdata[0].Delivery_Date is a Date object or a string representing a date
   const deliveryDate = new Date(req.body.formdata[0].Delivery_Date);
@@ -983,68 +1007,59 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
     .toISOString()
     .replace("T", " ")
     .replace(/\.\d{3}Z$/, "");
+
   try {
-    // Check if there are any existing orders matching the conditions
-    let checkExistingQuery = `SELECT * FROM magodmis.order_list i WHERE i.ScheduleId ='${req.body.formdata[0].ScheduleId}' AND i.\`Order-Ref\`='Fixture'`;
-    misQueryMod(checkExistingQuery, (err, existingData) => {
+    // Fetch current Running_No
+    let getrunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='internalFixture'`;
+    misQueryMod(getrunningNoQuery, (err, runningNoData) => {
       if (err) {
-        console.log("Error checking existing orders:", err);
-        return res.status(500).send("Error checking existing orders");
+        console.log("Error fetching Running_No:", err);
+        return res.status(500).send("Error fetching Running_No");
       }
 
-      if (existingData.length === 0) {
-        // Fetch current Running_No
-        let getrunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='internalFixture'`;
-        misQueryMod(getrunningNoQuery, (err, runningNoData) => {
+      // Increment the current Running_No to get nextSrl
+      const nextSrl = parseInt(runningNoData[0].Running_No) + 1;
+
+      // Update magod_runningno table with the new nextSrl
+      let updateRunningNoQuery = `UPDATE magod_setup.magod_runningno SET Running_No=${nextSrl} WHERE Id=33`;
+      misQueryMod(updateRunningNoQuery, (err, updateResult) => {
+        if (err) {
+          console.log("Error updating Running_No:", err);
+          return res.status(500).send("Error updating Running_No");
+        }
+
+        // Prepare and execute the INSERT INTO query with nextSrl
+        let insertQuery = `INSERT INTO magodmis.order_list(
+            order_no, order_date, cust_code, contact_name, Type, 
+            delivery_date, purchase_order, order_received_by, salescontact, recordedby, dealing_engineer,
+            order_status, special_instructions, payment, ordervalue, materialvalue, billing_address, delivery, del_place,
+            del_mode, \`Order-Ref\`, order_type, register, qtnno, ScheduleId
+          ) VALUES (
+            ${nextSrl}, now(), '${req.body.formdata[0].Cust_Code}', '${req.body.formdata[0].Dealing_Engineer}',
+            '${req.body.formdata[0].Type}', '${formattedDeliveryDate}', '${req.body.formdata[0].PO}', '${req.body.formdata[0].Dealing_Engineer}',
+            '${req.body.formdata[0].SalesContact}', '${req.body.formdata[0].Dealing_Engineer}', '${req.body.formdata[0].Dealing_Engineer}', 'Recorded',
+            '${req.body.formdata[0].Special_Instructions}', 'ByOrder', '0', '0', 'Magod Laser', '0', 'Shop Floor', 'By Hand',
+            'Fixture', 'Scheduled', '0', 'None', '${req.body.formdata[0].ScheduleId}'
+          )`;
+        misQueryMod(insertQuery, (err, insertResult) => {
           if (err) {
-            console.log("Error fetching Running_No:", err);
-            return res.status(500).send("Error fetching Running_No");
+            console.log("Error inserting order:", err);
+            return res.status(500).send("Error inserting order");
           }
 
-          // Increment the current Running_No to get nextSrl
-          const nextSrl = parseInt(runningNoData[0].Running_No) + 1;
-
-          // Update magod_runningno table with the new nextSrl
-          let updateRunningNoQuery = `UPDATE magod_setup.magod_runningno SET Running_No=${nextSrl} WHERE Id=33`;
-          misQueryMod(updateRunningNoQuery, (err, updateResult) => {
+          // Fetch the inserted row
+          let fetchInsertedRowQuery = `SELECT * FROM magodmis.order_list WHERE Order_No = ${nextSrl}`;
+          misQueryMod(fetchInsertedRowQuery, (err, insertedRow) => {
             if (err) {
-              console.log("Error updating Running_No:", err);
-              return res.status(500).send("Error updating Running_No");
+              console.log("Error fetching inserted row:", err);
+              return res.status(500).send("Error fetching inserted row");
             }
 
-            // Prepare and execute the INSERT INTO query with nextSrl
-            let insertQuery = `INSERT INTO magodmis.order_list(order_no,order_date ,cust_code ,contact_name ,Type, 
-              delivery_date , purchase_order , order_received_by, salescontact, recordedby, dealing_engineer ,
-               order_status , special_instructions ,payment , ordervalue , materialvalue , billing_address , delivery , del_place ,
-               del_mode , \`Order-Ref\`, order_type , register ,qtnno,ScheduleId) VALUES (${nextSrl},now(),'${req.body.formdata[0].Cust_Code}',
-               '${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Type}','${formattedDeliveryDate}','${req.body.formdata[0].PO}','${req.body.formdata[0].Dealing_Engineer}',
-               '${req.body.formdata[0].SalesContact}','${req.body.formdata[0].Dealing_Engineer}','${req.body.formdata[0].Dealing_Engineer}','Recorded',
-               '${req.body.formdata[0].Special_Instructions}','ByOrder','0','0','Magod Laser','0','Shop Floor','By Hand','Fixture','Scheduled','0','None',
-               '${req.body.formdata[0].ScheduleId}')`;
-            misQueryMod(insertQuery, (err, insertResult) => {
-              if (err) {
-                console.log("Error inserting order:", err);
-                return res.status(500).send("Error inserting order");
-              }
-
-              // Fetch the inserted row
-              let fetchInsertedRowQuery = `SELECT * FROM magodmis.order_list WHERE Order_No = ${nextSrl}`;
-              misQueryMod(fetchInsertedRowQuery, (err, insertedRow) => {
-                if (err) {
-                  console.log("Error fetching inserted row:", err);
-                  return res.status(500).send("Error fetching inserted row");
-                }
-
-                // Send the inserted row as a response
-                res.send(insertedRow);
-              });
-            });
+            // Send the inserted row as a response
+            res.send(insertedRow);
           });
         });
-      } else {
-        // If existing orders are found, send the query result as the response
-        res.send(existingData);
-      }
+      });
     });
   } catch (error) {
     console.log("Error:", error);
