@@ -33,15 +33,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
     const ordertype = req.body.ordertype;
     const purchaseorder = req.body.purchaseorder;
     const qtnno = req.body.qtnno;
-
-    let deliverydate = null;
-
-    if (req.body.deliverydate) {
-       deliverydate = moment(req.body.deliverydate).format("YYYY-MM-DD");
-      }
-    // const deliverydate = moment(req.body.deliverydate).format("YYYY-MM-DD");
-    // const deliverydate = req.body.deliverydate ? moment(req.body.deliverydate).format("YYYY-MM-DD") : null;
-
+    const deliverydate = moment(req.body.deliverydate).format("YYYY-MM-DD");
     const paymentterms = req.body.paymentterms;
     const salesContact = req.body.salesContact;
     const ccode = req.body.CustCode;
@@ -73,21 +65,13 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
         }
         ////console.log(runningNoResult);
         runningno = runningNoResult[0]["Running_No"];
-<<<<<<< HEAD
-=======
-        voucherLength = runningNoResult[0]["Length"];
->>>>>>> 188c4d530fdaf818d8ad1e855452ec71e12e1e56
         ////console.log(runningno);
         // Generate the order number
         let ordno = `${zzz.getFullYear().toString().substr(-2)}${(
           parseInt(runningno) + 1
         )
           .toString()
-<<<<<<< HEAD
           .padStart(3, "0")}`;
-=======
-          .padStart(voucherLength, "0")}`;
->>>>>>> 188c4d530fdaf818d8ad1e855452ec71e12e1e56
         ////console.log(ordno);
         // Create folder on the server
         await createFolder("Order", ordno, "");
@@ -101,7 +85,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
             ordervalue, materialvalue, billing_address, BillingStateId, delivery, del_place, DelStateId, del_mode,
             tptcharges, order_type, register, qtnno) VALUES ('${ordno}', '${orddate}', '${ccode}', '${CustomerContact}', '${ordertype}', '${deliverydate}', '${purchaseorder}',
             '${receivedby}', '${salesContact}', '${RecordedBy}', '${DealingEngineer}', 'Created', '${SpecialInstructions}', '${paymentterms}',
-            '${0}', '${0}', '${billingAddress}', '${billingstateId}', ${MagodDelivery}, '${GSTTaxState}', '${DelStateId}', '${DeliveryMode}',
+            '${0}', '${0}', '${billingAddress}', '${billingstateId}', '${0}', '${GSTTaxState}', '${DelStateId}', '${DeliveryMode}',
             '${Transportcharges}', '${ordertype}', '${0}', '${qtnno}')`,
           (err, insertResult) => {
             if (err) logger.error(err);
