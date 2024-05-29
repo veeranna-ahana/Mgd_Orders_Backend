@@ -73,14 +73,21 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
         }
         ////console.log(runningNoResult);
         runningno = runningNoResult[0]["Running_No"];
+<<<<<<< HEAD
+=======
         voucherLength = runningNoResult[0]["Length"];
+>>>>>>> 188c4d530fdaf818d8ad1e855452ec71e12e1e56
         ////console.log(runningno);
         // Generate the order number
         let ordno = `${zzz.getFullYear().toString().substr(-2)}${(
           parseInt(runningno) + 1
         )
           .toString()
+<<<<<<< HEAD
+          .padStart(3, "0")}`;
+=======
           .padStart(voucherLength, "0")}`;
+>>>>>>> 188c4d530fdaf818d8ad1e855452ec71e12e1e56
         ////console.log(ordno);
         // Create folder on the server
         await createFolder("Order", ordno, "");

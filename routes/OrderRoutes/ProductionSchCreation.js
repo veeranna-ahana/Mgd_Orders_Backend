@@ -29,7 +29,7 @@ ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, n
         ) {
           let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
                       SalesContact, Dealing_Engineer, ScheduleType, Type, Internal, Schedule_Status,schTgtDate) 
-                      VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),'${formattedDeliveryDate}', '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
+                      VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),adddate(curdate(), INTERVAL 2 DAY), '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
           misQuery(insertquery1, (result, err1) => {
             if (err1) {
               console.log("Error inserting into orderschedule:", result);
@@ -229,7 +229,7 @@ ProductionSchCreationRouter.post(`/canceltoRecord`, async (req, res, next) => {
 ProductionSchCreationRouter.post(
   `/schedulelistbasedonScheduleType`,
   async (req, res, next) => {
-    console.log("scheduleType",req.body.scheduleType,req.body.OrderData.Order_No)
+    // console.log("scheduleType",req.body.scheduleType,req.body.OrderData.Order_No)
     let query = `Select * from  magodmis.orderschedule WHERE Order_No='${req.body.OrderData.Order_No}' and ScheduleType='${req.body.scheduleType}'`;
     try {
       misQueryMod(query, (err, data) => {
