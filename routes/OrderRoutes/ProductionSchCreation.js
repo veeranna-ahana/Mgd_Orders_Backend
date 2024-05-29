@@ -29,7 +29,7 @@ ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, n
         ) {
           let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
                       SalesContact, Dealing_Engineer, ScheduleType, Type, Internal, Schedule_Status,schTgtDate) 
-                      VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),'${formattedDeliveryDate}', '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
+                      VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),adddate(curdate(), INTERVAL 2 DAY), '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
           misQuery(insertquery1, (result, err1) => {
             if (err1) {
               console.log("Error inserting into orderschedule:", result);
