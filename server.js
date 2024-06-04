@@ -1,3 +1,5 @@
+/** @format */
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -36,12 +38,13 @@ const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
-const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
-const CombinedScheduleCreate = require('./routes/CombinedSchedule/CombinedScheduleCreate');
-const scheduleListCombined = require('./routes/CombinedSchedule/scheduleListCombined');
-const ProductionSchCreationRouter=require('./routes/OrderRoutes/ProductionSchCreation');
-const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
-
+const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
+const CombinedScheduleCreate = require("./routes/CombinedSchedule/CombinedScheduleCreate");
+const scheduleListCombined = require("./routes/CombinedSchedule/scheduleListCombined");
+const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
+// const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
+const NCProgramRouter = require("./routes/OrderRoutes/NCprogram");
+app.use("/NCProgram", NCProgramRouter);
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -77,24 +80,46 @@ app.use("/orderList", orderListRouter);
 app.use("/ScheduleList", ScheduleListRouter);
 app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
 app.use("/scheduleListCombined", scheduleListCombined);
-app.use("/productionSchCreation",ProductionSchCreationRouter);
-app.use("/NCProgram",NCProgramRouter);
+
+// Deleted routess
+// NEW ORDER ROUTES
+const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
+// const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
+const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
+const ProfarmaInvFormRouter = require("./routes/OrderRoutes/ProfarmaInvForm");
+const PackingNoteAndInvoiceRouter = require("./routes/OrderRoutes/PackingNoteAndInvoice");
+// const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
+// const NCprogramRoter=require("./routes/OrderRoutes/NCprogram");
+// running no
+const runningNoRouter = require("./routes/runningNo");
+
+app.use("/runningNo", runningNoRouter);
+// app.use("/NCProgram",NCprogramRoter)
+// app.use(fileUpload());
+
+// NEW ODER ROUTES
+app.use("/orderDetails", OrderDetailsRouter);
+app.use("/productionSchCreation", ProductionSchCreationRouter);
+app.use("/profarmaInvList", ProfarmaInvListRouter);
+// app.use("/scheduleList", ScheduleListRouter);
+app.use("/orderPackingNoteAndInvoice", PackingNoteAndInvoiceRouter);
+app.use("/profarmaInvForm", ProfarmaInvFormRouter);
 
 // app.use(fileUpload());
 
 app.use((err, req, res, next) => {
-  res.status(err.status || 500);
-  res.send({
-    error: {
-      status: err.status || 500,
-      message: err.message,
-    },
-  });
-  logger.error(`Status Code : ${err.status}  - Error : ${err.message}`);
+	res.status(err.status || 500);
+	res.send({
+		error: {
+			status: err.status || 500,
+			message: err.message,
+		},
+	});
+	logger.error(`Status Code : ${err.status}  - Error : ${err.message}`);
 });
 
 // starting the server
 app.listen(process.env.PORT, () => {
-  console.log("Server running on port", process.env.PORT);
-  // logger.info("listening on port", process.env.PORT);
+	console.log("Server running on port", process.env.PORT);
+	// logger.info("listening on port", process.env.PORT);
 });

@@ -8,7 +8,7 @@ const {
 const { logger } = require("../../helpers/logger");
 
 OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
-  // console.log("entering into insertnewsrldata");
+  console.log("entering into insertnewsrldata");
   console.log("req", req.body);
   // console.log("req", req.body.requestData.OrderNo);
   try {
