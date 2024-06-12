@@ -6,6 +6,22 @@ const cors = require("cors");
 // const fileUpload = require('express-fileupload');
 
 const app = express();
+const {
+	misQuery,
+	setupQuery,
+	qtnQuery,
+	misQueryMod,
+	qtnQueryMod,
+	qtnQueryModv2,
+	slsQueryMod,
+	mchQueryMod,
+	mtrlQueryMod,
+	setupQueryMod,
+} = require("./helpers/dbconn");
+
+setupQuery("SELECT 1", (res) => {
+	console.log("Connected to MySQL successfully. ");
+});
 
 const userRouter = require("./routes/user");
 
