@@ -22,7 +22,7 @@ const {
 setupQuery("SELECT 1", (res) => {
 	console.log("Connected to MySQL successfully. ");
 });
-
+app.use(cors());
 const userRouter = require("./routes/user");
 
 const unitRouter = require("./routes/units");
@@ -58,11 +58,8 @@ const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
 const CombinedScheduleCreate = require("./routes/CombinedSchedule/CombinedScheduleCreate");
 const scheduleListCombined = require("./routes/CombinedSchedule/scheduleListCombined");
 const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
-// const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
 const NCProgramRouter = require("./routes/OrderRoutes/NCprogram");
-app.use("/NCProgram", NCProgramRouter);
 
-app.use(cors());
 app.use(bodyParser.json());
 app.use("/user", userRouter);
 app.use("/units", unitRouter);
@@ -96,7 +93,7 @@ app.use("/orderList", orderListRouter);
 app.use("/ScheduleList", ScheduleListRouter);
 app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
 app.use("/scheduleListCombined", scheduleListCombined);
-
+app.use("/NCProgram", NCProgramRouter);
 // Deleted routess
 // NEW ORDER ROUTES
 const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");

@@ -527,6 +527,9 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 	const selectedItems = req.body.selectedItems;
 	const orderNo = req.body.OrderNo;
 
+	console.log("reqBody", req.body);
+	console.log("reqBody", req.body.MtrlSrc);
+
 	let completedUpdates = 0;
 	const executeUpdate = (
 		orderSrl,
@@ -537,7 +540,8 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 		UnitPrice,
 		Operation,
 		InspLevel,
-		PackingLevel
+		PackingLevel,
+		Mtrl_Source
 	) => {
 		const updateQuery = `
       UPDATE magodmis.order_details
@@ -545,11 +549,12 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
         Qty_Ordered = ${qtyOrdered},
         DwgName = '${DwgName}',
         JWCost = ${JWCost},
-			  MtrlCost = ${MtrlCost},
-			  UnitPrice = ${UnitPrice},
-			  Operation = '${Operation}',
-			  InspLevel = '${InspLevel}',
-			  PackingLevel = '${PackingLevel}'
+		MtrlCost = ${MtrlCost},
+		UnitPrice = ${UnitPrice},
+		Operation = '${Operation}',
+		InspLevel = '${InspLevel}',
+		PackingLevel = '${PackingLevel}',
+		Mtrl_Source='${Mtrl_Source}'
       WHERE Order_No = ${orderNo} 
       AND Order_Srl = ${orderSrl}
     `;
@@ -575,14 +580,30 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 			const orderSrl = orderSrlArray[i];
 			const oldValues = selectedItems[i];
 
-			const qtyOrdered = parseInt(oldValues.quantity);
+			console.log("oldValues", oldValues);
+			let qtyOrdered; // Define variable to hold the value
+
+			if (typeof oldValues.quantity !== "undefined") {
+				qtyOrdered = parseInt(oldValues.quantity); // Assuming quantity is numeric
+			} else {
+				qtyOrdered = oldValues.Qty_Ordered; // Use oldValues.Qty_Ordered if quantity is undefined
+			}
+			console.log("qtyOrdered...", qtyOrdered);
 			const DwgName = oldValues.DwgName;
-			const JWCost = oldValues.JWCost;
-			const MtrlCost = oldValues.MtrlCost;
-			const UnitPrice = oldValues.UnitPrice;
+			const JWCost = parseInt(oldValues.JWCost);
+			const MtrlCost = parseInt(oldValues.MtrlCost);
+			const UnitPrice = parseInt(oldValues.UnitPrice);
 			const Operation = oldValues.Operation;
 			const InspLevel = oldValues.InspLevel;
 			const PackingLevel = oldValues.PackingLevel;
+			let Mtrl_Source;
+			if (req.body.MtrlSrc !== "") {
+				Mtrl_Source = req.body.MtrlSrc;
+			} else {
+				Mtrl_Source = oldValues.Mtrl_Source;
+			}
+			console.log("Mtrl_Source", Mtrl_Source);
+			console.log("oldValues.Mtrl_Source", oldValues.Mtrl_Source);
 
 			await executeUpdate(
 				orderSrl,
@@ -593,7 +614,8 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 				UnitPrice,
 				Operation,
 				InspLevel,
-				PackingLevel
+				PackingLevel,
+				Mtrl_Source
 			);
 
 			completedUpdates++;

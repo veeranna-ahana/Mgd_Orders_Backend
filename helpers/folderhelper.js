@@ -83,7 +83,13 @@ let createFolder = async (SrlType, qno, month, callback) => {
 				await fs.exists(folderBase + `/Wo/${qno}`, async (exists) => {
 					if (!exists) {
 						await fs.mkdirSync(folderBase + `/Wo/${qno}`);
-						console.log("creating a folder.....");
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/BOM`);
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/DespInfo`);
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/DXF`);
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/NestDXF`);
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/Parts`);
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/WO`);
+						await fs.mkdirSync(folderBase + `/Wo/${qno}/WOL`);
 					}
 				});
 				break;
