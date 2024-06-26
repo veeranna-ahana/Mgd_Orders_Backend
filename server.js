@@ -41,6 +41,9 @@ const CombinedScheduleCreate = require('./routes/CombinedSchedule/CombinedSchedu
 const scheduleListCombined = require('./routes/CombinedSchedule/scheduleListCombined');
 const ProductionSchCreationRouter=require('./routes/OrderRoutes/ProductionSchCreation');
 const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
+const taskSheet = require("./routes/taskSheet");
+const solidState = require("./routes/solidState");
+const co2 = require("./routes/co2");
 
 
 app.use(cors());
@@ -79,6 +82,10 @@ app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
 app.use("/scheduleListCombined", scheduleListCombined);
 app.use("/productionSchCreation",ProductionSchCreationRouter);
 app.use("/NCProgram",NCProgramRouter);
+app.use("/taskSheet", taskSheet);
+app.use("/solidState", solidState);
+app.use("/co2", co2);
+
 
 // app.use(fileUpload());
 

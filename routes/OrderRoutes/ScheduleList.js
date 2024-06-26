@@ -45,7 +45,7 @@ ScheduleListRouter.post(`/getDwgTableData`, async (req, res, next) => {
 });
 
 //ShiftDetailsTabData
-ScheduleListRouter.post(`/shiftDetails`, async (req, res, next) => {
+ScheduleListRouter.post(`/ScheduleDetails`, async (req, res, next) => {
   // console.log("req.body",req.body);
   let query = `SELECT o.*, cast(o1.Qty_Ordered As SIGNED)  - cast(o1.QtyScheduled As SIGNED) 
   as QtyToSchedule ,o1.OrderDetailId 
@@ -89,7 +89,7 @@ ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
 
 //get DWg List of Selected Task
 ScheduleListRouter.post(`/getDwgDataListTMTab`, async (req, res, next) => {
-  // console.log("req.body /getTaskandMterial is",req.body);
+  console.log("req.body /getDwgDataListTMTab is",req.body);
   let query = `SELECT * FROM magodmis.orderscheduledetails where NcTaskId='${req.body.list.NcTaskId}'`;
 
   try {
@@ -125,6 +125,7 @@ ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
 
 //Button Save
 ScheduleListRouter.post(`/save`, async (req, res, next) => {
+  console.log("req.body",req.body.changedEngineer);
   // Constructing the query to update orderscheduledetails table
   let query = `UPDATE magodmis.orderscheduledetails o,
     (SELECT  CASE
@@ -148,7 +149,7 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
                                     SET Special_Instructions='${req.body.SpclInstruction}',
                                         Delivery_Date='${req.body.deliveryDate}',
                                         Dealing_Engineer='${req.body.changedEngineer}' 
-                                    WHERE Order_No='${req.body.formdata[0].Order_No}'`;
+                                    WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
 
   try {
     // Executing the first query
@@ -792,7 +793,7 @@ scheduleDetails.forEach((row) => {
                                                                             TaskNo;
 
                                                                           // Insert into magodmis.task_partslist table
-                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
+                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest,QtyNested,OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
 
                                                                           // Execute the insert query
                                                                           misQueryMod(
@@ -1036,7 +1037,7 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
             del_mode, \`Order-Ref\`, order_type, register, qtnno, ScheduleId
           ) VALUES (
             ${nextSrl}, now(), '${req.body.formdata[0].Cust_Code}', '${req.body.formdata[0].Dealing_Engineer}',
-            '${req.body.formdata[0].Type}', '${formattedDeliveryDate}', '${req.body.formdata[0].PO}', '${req.body.formdata[0].Dealing_Engineer}',
+            'Profile', '${formattedDeliveryDate}', '${req.body.formdata[0].PO}', '${req.body.formdata[0].Dealing_Engineer}',
             '${req.body.formdata[0].SalesContact}', '${req.body.formdata[0].Dealing_Engineer}', '${req.body.formdata[0].Dealing_Engineer}', 'Recorded',
             '${req.body.formdata[0].Special_Instructions}', 'ByOrder', '0', '0', 'Magod Laser', '0', 'Shop Floor', 'By Hand',
             'Fixture', 'Scheduled', '0', 'None', '${req.body.formdata[0].ScheduleId}'

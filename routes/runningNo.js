@@ -77,8 +77,6 @@ runningNoRouter.post("/updateRunningNoBySrlType", async (req, res, next) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 runningNoRouter.post("/insertAndGetRunningNo", async (req, res, next) => {
   // console.log("reqqqq", req.body);
 
@@ -196,5 +194,4 @@ runningNoRouter.post("/insertAndGetRunningNo", async (req, res, next) => {
   }
 });
 
->>>>>>> 188c4d530fdaf818d8ad1e855452ec71e12e1e56
 module.exports = runningNoRouter;
