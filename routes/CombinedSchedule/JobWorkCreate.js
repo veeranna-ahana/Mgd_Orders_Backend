@@ -37,6 +37,7 @@ jobWork.get('/getSalesContactList', jsonParser, async (req, res, next) => {
 });
 
 jobWork.post('/getRightTableData', jsonParser, async (req, res, next) => {
+  // console.log("req.body right table",req.body);
   try {
     mchQueryMod(`SELECT o.* FROM magodmis.orderschedule o WHERE  o.Schedule_Status = 'Tasked' AND o.ScheduleType NOT LIKE 'Combined' AND o.Cust_code = '${req.body.custCode}'`, (err, data) => {
       if (err) logger.error(err);

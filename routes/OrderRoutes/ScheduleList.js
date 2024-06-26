@@ -1037,7 +1037,7 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
             del_mode, \`Order-Ref\`, order_type, register, qtnno, ScheduleId
           ) VALUES (
             ${nextSrl}, now(), '${req.body.formdata[0].Cust_Code}', '${req.body.formdata[0].Dealing_Engineer}',
-            '${req.body.formdata[0].Type}', '${formattedDeliveryDate}', '${req.body.formdata[0].PO}', '${req.body.formdata[0].Dealing_Engineer}',
+            'Profile', '${formattedDeliveryDate}', '${req.body.formdata[0].PO}', '${req.body.formdata[0].Dealing_Engineer}',
             '${req.body.formdata[0].SalesContact}', '${req.body.formdata[0].Dealing_Engineer}', '${req.body.formdata[0].Dealing_Engineer}', 'Recorded',
             '${req.body.formdata[0].Special_Instructions}', 'ByOrder', '0', '0', 'Magod Laser', '0', 'Shop Floor', 'By Hand',
             'Fixture', 'Scheduled', '0', 'None', '${req.body.formdata[0].ScheduleId}'

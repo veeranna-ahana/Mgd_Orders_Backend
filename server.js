@@ -54,11 +54,15 @@ const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
+
 const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
 const CombinedScheduleCreate = require("./routes/CombinedSchedule/CombinedScheduleCreate");
 const scheduleListCombined = require("./routes/CombinedSchedule/scheduleListCombined");
 const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
 const NCProgramRouter = require("./routes/OrderRoutes/NCprogram");
+const taskSheet = require("./routes/taskSheet");
+const solidState = require("./routes/solidState");
+const co2 = require("./routes/co2");
 
 app.use(bodyParser.json());
 app.use("/user", userRouter);
@@ -93,7 +97,13 @@ app.use("/orderList", orderListRouter);
 app.use("/ScheduleList", ScheduleListRouter);
 app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
 app.use("/scheduleListCombined", scheduleListCombined);
+
+app.use("/productionSchCreation", ProductionSchCreationRouter);
 app.use("/NCProgram", NCProgramRouter);
+app.use("/taskSheet", taskSheet);
+app.use("/solidState", solidState);
+app.use("/co2", co2);
+
 // Deleted routess
 // NEW ORDER ROUTES
 const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
