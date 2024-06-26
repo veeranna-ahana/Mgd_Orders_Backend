@@ -48,6 +48,7 @@ NCprogramRoter.post(`/getMachines`, async (req, res, next) => {
 //ADD NCPROGRAM
 NCprogramRoter.post(`/addProgram`, async (req, res, next) => {
     const { NcTaskId } = req.body.NCprogramForm[0]; // Assuming NcTaskId is sent in the request body
+    console.log("req.body addProgram is",req.body);
     try {
         // Query to check if Quantity Tasked has already been programmed
         const checkQuantityQuery = `SELECT * FROM magodmis.task_partslist WHERE NcTaskId='${NcTaskId}'`;
@@ -59,9 +60,10 @@ NCprogramRoter.post(`/addProgram`, async (req, res, next) => {
             } else {
                 // Check if Quantity Tasked > QtyNested
                 if (quantityData && quantityData.length > 0) {
+                    console.log("quantityData is",quantityData,"quantityData.length is",quantityData.length);
                     const { QtyToNest, QtyNested } = quantityData[0];
-                    // console.log("QtyNested",QtyToNest,"QtyNested",QtyNested)
-                    if (QtyToNest >= QtyNested) {
+                    console.log("QtyToNest",QtyToNest,"QtyNested",QtyNested)
+                    if (QtyToNest > QtyNested) {
                         return res.status(400).json({ message: "Quantity Tasked has already been programmed" });
                     } else {
                         // Query to get Operation for the given NcTaskId
