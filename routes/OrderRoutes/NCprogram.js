@@ -108,7 +108,7 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
                                             const insertNCProgramQuery = `INSERT INTO magodmis.ncprograms(
                                                 NcTaskId, TaskNo, NCProgramNo, Qty, TotalParts, Machine, Mprocess, Operation, Mtrl_code, Cust_code, CustMtrl, DeliveryDate, pstatus, NoOfDwgs, HasBOM, Shape
                                             ) VALUES(
-                                                '${NcTaskId}', '${TaskNo}', '${nextNCProgramNo}', '${taskPartsData[0].QtyToNest}', '${existingData[0].TotalParts}', '${existingData[0].Machine}', '${existingData[0].MProcess}', '${existingData[0].Operation}', '${existingData[0].Mtrl_Code}', '${existingData[0].Cust_Code}', '${existingData[0].CustMtrl}', '${new Date(existingData[0].DeliveryDate).toISOString().slice(0, 19).replace('T', ' ')}', 'Created', '${existingData[0].NoOfDwgs}', '${taskPartsData[0].HasBOM}', 'Units'
+                                                '${NcTaskId}', '${TaskNo}', '${nextNCProgramNo}', '${taskPartsData[0].QtyToNest}', '${existingData[0].TotalParts}', '${req.body.selectedMachine}', '${existingData[0].MProcess}', '${existingData[0].Operation}', '${existingData[0].Mtrl_Code}', '${existingData[0].Cust_Code}', '${existingData[0].CustMtrl}', '${new Date(existingData[0].DeliveryDate).toISOString().slice(0, 19).replace('T', ' ')}', 'Created', '${existingData[0].NoOfDwgs}', '${taskPartsData[0].HasBOM}', 'Units'
                                             )`;
                                             // console.log("insertNCProgramQuery is", insertNCProgramQuery);
 
@@ -192,6 +192,7 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
 NCprogramRoter.post(`/getPrograms`, async (req, res, next) => {
     // console.log(req.body);
     const { NcTaskId } = req.body.NCprogramForm[0] || []; // Assuming NcTaskId is sent in the request body
+    console.log("NcTaskId is",NcTaskId);
     let query = `select * from magodmis.ncprograms where  NcTaskId='${NcTaskId}'`;
     try {
         misQueryMod(query, (err, data) => {
@@ -264,7 +265,6 @@ NCprogramRoter.post(`/ButtonSave`, async (req, res, next) => {
 
 //getNCProram Parts Data
 NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
-    console.log("req.body",req.body);
     let queryCheckBOM = `SELECT t.HasBOM FROM magodmis.task_partslist t WHERE t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}'`;
   
     try {

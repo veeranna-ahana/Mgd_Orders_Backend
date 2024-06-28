@@ -90,32 +90,6 @@ app.use("/solidState", solidState);
 app.use("/co2", co2);
 
 
-
-// Deleted routess
-// NEW ORDER ROUTES
-const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
-// const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
-const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
-const ProfarmaInvFormRouter = require("./routes/OrderRoutes/ProfarmaInvForm");
-const PackingNoteAndInvoiceRouter = require("./routes/OrderRoutes/PackingNoteAndInvoice");
-// const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
-// const NCprogramRoter=require("./routes/OrderRoutes/NCprogram");
-// running no
-const runningNoRouter = require("./routes/runningNo");
-
-app.use("/runningNo", runningNoRouter);
-// app.use("/NCProgram",NCprogramRoter)
-// app.use(fileUpload());
-
-// NEW ODER ROUTES
-app.use("/orderDetails", OrderDetailsRouter);
-app.use("/productionSchCreation", ProductionSchCreationRouter);
-app.use("/profarmaInvList", ProfarmaInvListRouter);
-// app.use("/scheduleList", ScheduleListRouter);
-app.use("/orderPackingNoteAndInvoice", PackingNoteAndInvoiceRouter);
-app.use("/profarmaInvForm", ProfarmaInvFormRouter);
-
-
 // app.use(fileUpload());
 
 app.use((err, req, res, next) => {
