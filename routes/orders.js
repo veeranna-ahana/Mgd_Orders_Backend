@@ -33,6 +33,10 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
 			":" +
 			zzz.getSeconds();
 		const ordertype = req.body.ordertype;
+		console.log("ordertyp...123e", ordertype);
+		const type = req.body.type;
+		console.log("type...123", type);
+
 		const purchaseorder = req.body.purchaseorder;
 		const qtnno = req.body.qtnno;
 
@@ -65,29 +69,27 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
 		////console.log("Before Order");
 		let runningno = 0;
 
-
-    // Retrieve the running number for orders
-    await setupQueryMod(
-      `SELECT * FROM magod_setup.magod_runningno WHERE SrlType='Order' AND UnitName='Jigani' ORDER BY Id DESC LIMIT 1`,
-      async (err, runningNoResult) => {
-        if (err) {
-          ////console.log(err);
-          return;
-        }
-        ////console.log(runningNoResult);
-        runningno = runningNoResult[0]["Running_No"];
-        voucherLength = runningNoResult[0]["Length"];
-        ////console.log(runningno);
-        // Generate the order number
-        let ordno = `${zzz.getFullYear().toString().substr(-2)}${(
-          parseInt(runningno) + 1
-        )
-          .toString()
-          .padStart(voucherLength, "0")}`;
-        ////console.log(ordno);
-        // Create folder on the server
-        await createFolder("Order", ordno, "");
-
+		// Retrieve the running number for orders
+		await setupQueryMod(
+			`SELECT * FROM magod_setup.magod_runningno WHERE SrlType='Order' AND UnitName='Jigani' ORDER BY Id DESC LIMIT 1`,
+			async (err, runningNoResult) => {
+				if (err) {
+					////console.log(err);
+					return;
+				}
+				////console.log(runningNoResult);
+				runningno = runningNoResult[0]["Running_No"];
+				voucherLength = runningNoResult[0]["Length"];
+				////console.log(runningno);
+				// Generate the order number
+				let ordno = `${zzz.getFullYear().toString().substr(-2)}${(
+					parseInt(runningno) + 1
+				)
+					.toString()
+					.padStart(voucherLength, "0")}`;
+				////console.log(ordno);
+				// Create folder on the server
+				await createFolder("Order", ordno, "");
 
 				////console.log("After Qtn");
 
@@ -99,7 +101,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
             tptcharges, order_type, register, qtnno) VALUES ('${ordno}', '${orddate}', '${ccode}', '${CustomerContact}', '${ordertype}', '${deliverydate}', '${purchaseorder}',
             '${receivedby}', '${salesContact}', '${RecordedBy}', '${DealingEngineer}', 'Created', '${SpecialInstructions}', '${paymentterms}',
             '${0}', '${0}', '${billingAddress}', '${billingstateId}', ${MagodDelivery}, '${GSTTaxState}', '${DelStateId}', '${DeliveryMode}',
-            '${Transportcharges}', '${ordertype}', '${0}', '${qtnno}')`,
+            '${Transportcharges}', '${type}', '${0}', '${qtnno}')`,
 					(err, insertResult) => {
 						if (err) logger.error(err);
 						////console.log("Inserted order data:", insertResult);
@@ -110,7 +112,8 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
 							`UPDATE magod_setup.magod_runningno SET Running_No = Running_No + 1 WHERE SrlType='Order' AND Id = ${runningNoResult[0]["Id"]}`,
 							(err, updateResult) => {}
 						);
-						////console.log("Updated running number.");
+						// console.log("Updated running number.");
+						// console.log("Saved Successfully.", ordno);
 						res.send({ message: "Saved Successfully", orderno: ordno });
 					}
 				);
@@ -377,8 +380,8 @@ ordersRouter.post(`/getorderstatuslist`, async (req, res, next) => {
 //-------------------------Veeranna---------------------------------
 
 ordersRouter.post("/getOrderDataforFindOrder", async (req, res) => {
-	////console.log("req.body -", req.body);
-	////console.log("req.body -", req.body.ordtype);
+	// console.log("req.body -", req.body);
+	console.log("req.body -", req.body.ordtype);
 	try {
 		misQueryMod(
 			`SELECT o.Order_No,o.Cust_Code
