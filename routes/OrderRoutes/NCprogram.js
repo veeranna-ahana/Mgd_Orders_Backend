@@ -143,7 +143,7 @@ NCprogramRoter.post("/addProgram", async (req, res, next) => {
                                                 '${NcTaskId}', '${TaskNo}', '${nextNCProgramNo}', '${
 														taskPartsData[0].QtyToNest
 													}', '${existingData[0].TotalParts}', '${
-														existingData[0].Machine
+														req.body.selectedMachine
 													}', '${existingData[0].MProcess}', '${
 														existingData[0].Operation
 													}', '${existingData[0].Mtrl_Code}', '${
@@ -276,6 +276,7 @@ NCprogramRoter.post("/addProgram", async (req, res, next) => {
 NCprogramRoter.post(`/getPrograms`, async (req, res, next) => {
 	// console.log(req.body);
 	const { NcTaskId } = req.body.NCprogramForm[0] || []; // Assuming NcTaskId is sent in the request body
+	console.log("NcTaskId is", NcTaskId);
 	let query = `select * from magodmis.ncprograms where  NcTaskId='${NcTaskId}'`;
 	try {
 		misQueryMod(query, (err, data) => {
@@ -345,7 +346,6 @@ NCprogramRoter.post(`/ButtonSave`, async (req, res, next) => {
 
 //getNCProram Parts Data
 NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
-	console.log("req.body", req.body);
 	let queryCheckBOM = `SELECT t.HasBOM FROM magodmis.task_partslist t WHERE t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}'`;
 
 	try {
@@ -357,7 +357,7 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
 
 			if (bomData && bomData.length > 0 && bomData[0].HasBOM === 1) {
 				// Execute query when HasBOM is 1 (true)
-				let query = `SELECT c2.PartId, c1.Quantity as QtyPerAssy, c2.Id As CustBOM_Id, t.Task_Part_ID, t.QtyNested * c1.Quantity as QtyRequired
+				let query = `SELECT c2.PartId, c1.Quantity as QtyPerAssy, c2.Id As CustBOM_Id, t.Task_Part_ID, t.QtyNested * c1.Quantity as QtyRequired 
                        FROM magodmis.task_partslist t, magodmis.orderscheduledetails o, magodmis.cust_assy_data c,
                             magodmis.cust_assy_bom_list c1, magodmis.cust_bomlist c2
                        WHERE t.NcTaskId='${req.body.NCprogramForm[0].NcTaskId}' AND t.HasBOM AND t.SchDetailsId=o.SchDetailsID
