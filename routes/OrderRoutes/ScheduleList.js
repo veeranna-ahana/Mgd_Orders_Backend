@@ -793,7 +793,7 @@ scheduleDetails.forEach((row) => {
                                                                             TaskNo;
 
                                                                           // Insert into magodmis.task_partslist table
-                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
+                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest,QtyNested,OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
 
                                                                           // Execute the insert query
                                                                           misQueryMod(

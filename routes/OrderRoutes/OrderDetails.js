@@ -606,7 +606,8 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 		Operation,
 		InspLevel,
 		PackingLevel,
-		Mtrl_Source
+		Mtrl_Source,
+		Mtrl_Code
 	) => {
 		const updateQuery = `
       UPDATE magodmis.order_details
@@ -619,7 +620,8 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 		Operation = '${Operation}',
 		InspLevel = '${InspLevel}',
 		PackingLevel = '${PackingLevel}',
-		Mtrl_Source='${Mtrl_Source}'
+		Mtrl_Source='${Mtrl_Source}',
+		 Mtrl_Code='${Mtrl_Code}'
       WHERE Order_No = ${orderNo} 
       AND Order_Srl = ${orderSrl}
     `;
@@ -661,6 +663,7 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 			const Operation = oldValues.Operation;
 			const InspLevel = oldValues.InspLevel;
 			const PackingLevel = oldValues.PackingLevel;
+
 			let Mtrl_Source;
 			if (req.body.MtrlSrc !== "") {
 				Mtrl_Source = req.body.MtrlSrc;
@@ -669,7 +672,7 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 			}
 			console.log("Mtrl_Source", Mtrl_Source);
 			console.log("oldValues.Mtrl_Source", oldValues.Mtrl_Source);
-
+			const Mtrl_Code = oldValues.Mtrl_Code;
 			await executeUpdate(
 				orderSrl,
 				qtyOrdered,
@@ -680,7 +683,8 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 				Operation,
 				InspLevel,
 				PackingLevel,
-				Mtrl_Source
+				Mtrl_Source,
+				Mtrl_Code
 			);
 
 			completedUpdates++;
@@ -694,7 +698,7 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 });
 OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
 	console.log("enter into singleChangeUpdate");
-	console.log("req.body.MtrlSrc", req.body.MtrlSrc);
+	console.log("req.body", req.body);
 
 	try {
 		const qtyOrdered = parseInt(req.body.quantity);
@@ -706,6 +710,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
 		const PkngLvl = req.body.PkngLvl;
 		const DwgName = req.body.DwgName;
 		const Mtrl_Source = req.body.MtrlSrc;
+		const Mtrl_Code = req.body.strmtrlcode;
 
 		const updateQuery = `
     UPDATE magodmis.order_details
@@ -714,7 +719,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
       JWCost = CASE WHEN ${jwRate} IS NOT NULL THEN ${jwRate} ELSE JWCost END,
      MtrlCost = CASE WHEN ${materialRate} IS NOT NULL THEN ${materialRate} ELSE MtrlCost END,
       UnitPrice = CASE WHEN ${unitPrice} IS NOT NULL THEN ${unitPrice} ELSE UnitPrice END,
-      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}',Mtrl_Source='${Mtrl_Source}'
+      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}',Mtrl_Source='${Mtrl_Source}',Mtrl_Code='${Mtrl_Code}'
      
     WHERE Order_No = ${req.body.OrderNo} AND Order_Srl = ${req.body.OrderSrl}
   `;

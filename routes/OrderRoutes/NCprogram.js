@@ -47,284 +47,228 @@ NCprogramRoter.post(`/getMachines`, async (req, res, next) => {
 });
 
 //ADD NCPROGRAM
-NCprogramRoter.post(`/addProgram`, async (req, res, next) => {
-	const { NcTaskId } = req.body.NCprogramForm[0]; // Assuming NcTaskId is sent in the request body
+NCprogramRoter.post("/addProgram", async (req, res, next) => {
 	try {
-		// Query to check if Quantity Tasked has already been programmed
+		const { NCprogramForm, HasBOM } = req.body;
+
+		if (!NCprogramForm || !NCprogramForm[0]) {
+			return res
+				.status(400)
+				.json({ error: "NCprogramForm is missing or empty" });
+		}
+
+		const { NcTaskId, TaskNo } = NCprogramForm[0];
+
+		// Check if Quantity Tasked has already been programmed
 		const checkQuantityQuery = `SELECT * FROM magodmis.task_partslist WHERE NcTaskId='${NcTaskId}'`;
-		// Execute the query
 		misQueryMod(checkQuantityQuery, (err, quantityData) => {
 			if (err) {
 				console.log("Error while checking quantity:", err);
 				return res.status(500).json({ error: "Internal server error" });
+			} else if (!quantityData || quantityData.length === 0) {
+				return res
+					.status(400)
+					.json({ error: "No quantity data found for the provided NcTaskId" });
 			} else {
-				// Check if Quantity Tasked > QtyNested
-				if (quantityData && quantityData.length > 0) {
-					const { QtyToNest, QtyNested } = quantityData[0];
-					// console.log("QtyNested",QtyToNest,"QtyNested",QtyNested)
-					if (QtyToNest >= QtyNested) {
-						return res
-							.status(400)
-							.json({ message: "Quantity Tasked has already been programmed" });
-					} else {
-						// Query to get Operation for the given NcTaskId
-						const operationQuery = `SELECT Operation FROM magodmis.ncprograms WHERE NcTaskId='${NcTaskId}'`;
-						// Execute the query
-						misQueryMod(operationQuery, (opErr, operationData) => {
-							if (opErr) {
-								console.log("Error while fetching operation:", opErr);
-								return res.status(500).json({ error: "Internal server error" });
-							} else {
-								const operation = operationData[0]?.Operation; // Assuming Operation is the column name
-								// Query to check if Program Number is applicable for Single Operation Only
-								const multiOperationQuery = `SELECT MultiOperation FROM machine_data.magod_process_list WHERE ProcessDescription='${operation}'`;
-								// Execute the query
-								misQueryMod(
-									multiOperationQuery,
-									(multiOpErr, multiOperationData) => {
-										if (multiOpErr) {
-											console.log(
-												"Error while checking multi operation:",
-												multiOpErr
-											);
-											return res
-												.status(500)
-												.json({ error: "Internal server error" });
-										} else {
-											const multiOperation =
-												multiOperationData[0]?.MultiOperation; // Assuming MultiOperation is the column name
-											if (multiOperation === 1 || multiOperation === -1) {
-												return res.status(400).json({
-													message:
-														"Program Number applicable for Single Operation Only",
-												});
-											} else {
-												// Proceed with additional queries
-												const getRunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='NcProgramNo'`;
-												// Execute the query to get the running number
-												misQueryMod(
-													getRunningNoQuery,
-													(runningNoErr, runningNoData) => {
-														if (runningNoErr) {
-															console.log(
-																"Error while fetching running number:",
-																runningNoErr
-															);
-															return res
-																.status(500)
-																.json({ error: "Internal server error" });
-														} else {
-															const nextNCProgramNo =
-																parseInt(runningNoData[0]?.Running_No) + 1;
+				const { QtyToNest, QtyNested } = quantityData[0];
 
-															// Fetch existing NC program data for the provided NcTaskId
-															const existingNCProgramQuery = `SELECT * FROM magodmis.ncprograms WHERE NcTaskId='${NcTaskId}'`;
-															// Execute the query
-															misQueryMod(
-																existingNCProgramQuery,
-																(existingErr, existingData) => {
-																	if (existingErr) {
-																		console.log(
-																			"Error while fetching existing NC program data:",
-																			existingErr
-																		);
-																		return res
-																			.status(500)
-																			.json({ error: "Internal server error" });
-																	} else {
-																		// Fetch task parts list data for the provided NcTaskId
-																		const taskPartsListQuery = `SELECT * FROM magodmis.task_partslist WHERE NcTaskId='${NcTaskId}'`;
-																		// Execute the query
-																		misQueryMod(
-																			taskPartsListQuery,
-																			(taskPartsErr, taskPartsData) => {
-																				if (taskPartsErr) {
-																					console.log(
-																						"Error while fetching task parts list data:",
-																						taskPartsErr
-																					);
-																					return res.status(500).json({
-																						error: "Internal server error",
-																					});
-																				} else {
-																					// Check if taskPartsData is empty
-																					if (taskPartsData.length === 0) {
-																						return res.status(400).json({
-																							message:
-																								"No task parts data found for the provided NcTaskId",
+				if (QtyToNest > QtyNested) {
+					return res
+						.status(400)
+						.json({ message: "Quantity Tasked has already been programmed" });
+				} else {
+					// Get the running number
+					const getRunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='NcProgramNo'`;
+					misQueryMod(getRunningNoQuery, (runningNoErr, runningNoData) => {
+						if (runningNoErr) {
+							console.log("Error while fetching running number:", runningNoErr);
+							return res.status(500).json({ error: "Internal server error" });
+						} else if (!runningNoData || runningNoData.length === 0) {
+							return res
+								.status(400)
+								.json({ error: "No running number data found" });
+						} else {
+							const nextNCProgramNo =
+								parseInt(runningNoData[0]?.Running_No) + 1;
+							// console.log("Next NC Program No:", nextNCProgramNo);
+
+							// Fetch existing NC program data for the provided NcTaskId
+							const existingNCProgramQuery = `SELECT * FROM magodmis.nc_task_list WHERE NcTaskId='${NcTaskId}'`;
+							misQueryMod(
+								existingNCProgramQuery,
+								(existingErr, existingData) => {
+									if (existingErr) {
+										console.log(
+											"Error while fetching existing NC program data:",
+											existingErr
+										);
+										return res
+											.status(500)
+											.json({ error: "Internal server error" });
+									} else if (!existingData || existingData.length === 0) {
+										return res
+											.status(400)
+											.json({ error: "No existing NC program data found" });
+									} else {
+										// console.log("Existing NC program data:", existingData[0]);
+
+										// Fetch task parts list data for the provided NcTaskId
+										const taskPartsListQuery = `SELECT * FROM magodmis.task_partslist WHERE NcTaskId='${NcTaskId}'`;
+										misQueryMod(
+											taskPartsListQuery,
+											(taskPartsErr, taskPartsData) => {
+												if (taskPartsErr) {
+													console.log(
+														"Error while fetching task parts list data:",
+														taskPartsErr
+													);
+													return res
+														.status(500)
+														.json({ error: "Internal server error" });
+												} else if (
+													!taskPartsData ||
+													taskPartsData.length === 0
+												) {
+													return res.status(400).json({
+														message:
+															"No task parts data found for the provided NcTaskId",
+													});
+												} else {
+													// console.log("Task parts data:", taskPartsData[0]);
+
+													// Insert into ncprograms table
+													const insertNCProgramQuery = `INSERT INTO magodmis.ncprograms(
+                                                NcTaskId, TaskNo, NCProgramNo, Qty, TotalParts, Machine, Mprocess, Operation, Mtrl_code, Cust_code, CustMtrl, DeliveryDate, pstatus, NoOfDwgs, HasBOM, Shape
+                                            ) VALUES(
+                                                '${NcTaskId}', '${TaskNo}', '${nextNCProgramNo}', '${
+														taskPartsData[0].QtyToNest
+													}', '${existingData[0].TotalParts}', '${
+														existingData[0].Machine
+													}', '${existingData[0].MProcess}', '${
+														existingData[0].Operation
+													}', '${existingData[0].Mtrl_Code}', '${
+														existingData[0].Cust_Code
+													}', '${existingData[0].CustMtrl}', '${new Date(
+														existingData[0].DeliveryDate
+													)
+														.toISOString()
+														.slice(0, 19)
+														.replace("T", " ")}', 'Created', '${
+														existingData[0].NoOfDwgs
+													}', '${taskPartsData[0].HasBOM}', 'Units'
+                                            )`;
+													// console.log("insertNCProgramQuery is", insertNCProgramQuery);
+
+													misQueryMod(
+														insertNCProgramQuery,
+														(ncProgramErr, ncProgramResult) => {
+															if (ncProgramErr) {
+																console.log(
+																	"Error while inserting into ncprograms:",
+																	ncProgramErr
+																);
+																return res
+																	.status(500)
+																	.json({ error: "Internal server error" });
+															} else {
+																// console.log("NC Program inserted successfully:", ncProgramResult);
+																const lastInsertId = ncProgramResult.insertId;
+
+																// Insert into ncprogram_partslist
+																const insertPartsListQuery = `INSERT INTO magodmis.ncprogram_partslist(
+                                                        NcProgramNo, TaskNo, DwgName, PartID, QtyNested, Sheets, TotQtyNested, Task_Part_Id, NCId, HasBOM
+                                                    ) VALUES(
+                                                        '${nextNCProgramNo}', '${TaskNo}', '${req.body.NCprogramForm[0].AssyName}', '1', '${taskPartsData[0].QtyNested}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}'
+                                                    )`;
+
+																misQueryMod(
+																	insertPartsListQuery,
+																	(partsListErr, partsListResult) => {
+																		if (partsListErr) {
+																			console.log(
+																				"Error while inserting into ncprogram_partslist:",
+																				partsListErr
+																			);
+																			return res.status(500).json({
+																				error: "Internal server error",
+																			});
+																		} else {
+																			// console.log("NC Program parts list inserted successfully:", partsListResult);
+
+																			// Update magodmis.task_partslist
+																			const updateTaskPartsListQuery = `UPDATE magodmis.task_partslist t, 
+                                                                (SELECT Sum(n.TotQtyNested-n.QtyRejected) as TotalQtyNested, n.Task_Part_Id 
+                                                                 FROM magodmis.ncprogram_partslist n, magodmis.ncprograms n1 
+                                                                 WHERE n.NCId=n1.NCId AND n1.NcTaskId='${NcTaskId}' 
+                                                                 GROUP BY n.Task_Part_Id) as A 
+                                                                 SET t.QtyNested=A.TotalQtyNested 
+                                                                 WHERE A.Task_Part_Id=t.Task_Part_ID AND t.NcTaskId='${NcTaskId}'`;
+
+																			misQueryMod(
+																				updateTaskPartsListQuery,
+																				(updateErr, updateResult) => {
+																					if (updateErr) {
+																						console.log(
+																							"Error while updating task parts list:",
+																							updateErr
+																						);
+																						return res.status(500).json({
+																							error: "Internal server error",
 																						});
 																					} else {
-																						// Now, insert into ncprograms table
-																						const insertNCProgramQuery = `INSERT INTO magodmis.ncprograms(NcTaskId, TaskNo, NCProgramNo, Qty, TotalParts, Machine, Mprocess, Operation, Mtrl_code, Cust_code, CustMtrl, DeliveryDate, pstatus, NoOfDwgs, HasBOM, Shape) VALUES('${
-																							existingData[0].NcTaskId
-																						}', '${
-																							existingData[0].TaskNo
-																						}', '${nextNCProgramNo}', '${
-																							taskPartsData[0].QtyToNest -
-																							taskPartsData[0].QtyNested
-																						}', '${
-																							existingData[0].TotalParts
-																						}', '${
-																							existingData[0].Machine
-																						}', '${
-																							existingData[0].MProcess
-																						}', '${
-																							existingData[0].Operation
-																						}', '${
-																							existingData[0].Mtrl_Code
-																						}', '${
-																							existingData[0].Cust_Code
-																						}', '${
-																							existingData[0].CustMtrl
-																						}', '${new Date(
-																							existingData[0].DeliveryDate
-																						)
-																							.toISOString()
-																							.slice(0, 19)
-																							.replace(
-																								"T",
-																								" "
-																							)}', 'Created', '${
-																							existingData[0].NoOfDwgs
-																						}', '${
-																							existingData[0].HasBOM
-																						}', 'Units')`;
+																						// console.log("Task parts list updated successfully:", updateResult);
 
-																						// Execute the query to insert into ncprograms table and get the last insert ID
+																						// Update magod_setup.magod_runningno
+																						const updateRunningNoQuery = `UPDATE magod_setup.magod_runningno 
+                                                                        SET Running_No=${nextNCProgramNo} 
+                                                                        WHERE SrlType='NcProgramNo'`;
+
 																						misQueryMod(
-																							insertNCProgramQuery,
+																							updateRunningNoQuery,
 																							(
-																								ncProgramErr,
-																								ncProgramResult
+																								updateRunningErr,
+																								updateRunningResult
 																							) => {
-																								if (ncProgramErr) {
+																								if (updateRunningErr) {
 																									console.log(
-																										"Error while inserting into ncprograms:",
-																										ncProgramErr
+																										"Error while updating running number:",
+																										updateRunningErr
 																									);
 																									return res.status(500).json({
 																										error:
 																											"Internal server error",
 																									});
 																								} else {
-																									const lastInsertId =
-																										ncProgramResult.insertId;
-
-																									// Prepare the INSERT query for ncprogram_partslist based on task parts data
-																									const insertPartsListQuery = `INSERT INTO magodmis.ncprogram_partslist(NcProgramNo, TaskNo, DwgName, PartID, QtyNested, Sheets, TotQtyNested, Task_Part_Id, NCId, HasBOM) VALUES('${lastInsertId}','${taskPartsData[0].TaskNo}', '${taskPartsData[0].DwgName}','','${taskPartsData[0].QtyNested}', '${existingData[0].Qty}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}')`;
-																									// Execute the query
-																									misQueryMod(
-																										insertPartsListQuery,
-																										(
-																											partsListErr,
-																											partsListResult
-																										) => {
-																											if (partsListErr) {
-																												console.log(
-																													"Error while inserting into ncprogram_partslist:",
-																													partsListErr
-																												);
-																												return res
-																													.status(500)
-																													.json({
-																														error:
-																															"Internal server error",
-																													});
-																											} else {
-																												// UPDATE magodmis.task_partslist query
-																												const updateTaskPartsListQuery = `UPDATE magodmis.task_partslist t, (SELECT Sum(n.TotQtyNested-n.QtyRejected) as TotalQtyNested, n.Task_Part_Id FROM magodmis.ncprogram_partslist n, magodmis.ncprograms n1 WHERE n.NCId=n1.NCId AND n1.NcTaskId='${NcTaskId}' GROUP BY n.Task_Part_Id) as A SET t.QtyNested=A.TotalQtyNested WHERE A.Task_Part_Id=t.Task_Part_ID AND t.NcTaskId='${NcTaskId}'`;
-																												// Execute the query
-																												misQueryMod(
-																													updateTaskPartsListQuery,
-																													(
-																														updateErr,
-																														updateResult
-																													) => {
-																														if (updateErr) {
-																															console.log(
-																																"Error while updating task_partslist:",
-																																updateErr
-																															);
-																															return res
-																																.status(500)
-																																.json({
-																																	error:
-																																		"Internal server error",
-																																});
-																														} else {
-																															// Update the Running_No in magod_setup.magod_runningno table
-																															const updateRunningNoQuery = `UPDATE magod_setup.magod_runningno SET Running_No='${nextNCProgramNo}' WHERE SrlType='NcProgramNo' AND  Id='5'`;
-																															// Execute the query
-																															misQueryMod(
-																																updateRunningNoQuery,
-																																(
-																																	runningNoUpdateErr,
-																																	runningNoUpdateResult
-																																) => {
-																																	if (
-																																		runningNoUpdateErr
-																																	) {
-																																		console.log(
-																																			"Error while updating Running_No:",
-																																			runningNoUpdateErr
-																																		);
-																																		return res
-																																			.status(
-																																				500
-																																			)
-																																			.json({
-																																				error:
-																																					"Internal server error",
-																																			});
-																																	} else {
-																																		res
-																																			.status(
-																																				200
-																																			)
-																																			.json({
-																																				message:
-																																					"Success",
-																																				lastInsertId,
-																																			});
-																																	}
-																																}
-																															);
-																														}
-																													}
-																												);
-																											}
-																										}
-																									);
+																									// console.log("Running number updated successfully:", updateRunningResult);
+																									res.status(200).json({
+																										message:
+																											"NC Program added successfully",
+																									});
 																								}
 																							}
 																						);
 																					}
 																				}
-																			}
-																		);
+																			);
+																		}
 																	}
-																}
-															);
+																);
+															}
 														}
-													}
-												);
+													);
+												}
 											}
-										}
+										);
 									}
-								);
-							}
-						});
-					}
-				} else {
-					return res
-						.status(400)
-						.json({ message: "No data found for the provided NcTaskId" });
+								}
+							);
+						}
+					});
 				}
 			}
 		});
-	} catch (error) {
-		console.log("Error:", error);
-		return res.status(500).json({ error: "Internal server error" });
+	} catch (err) {
+		res.status(500).json({ error: "Internal server error" });
 	}
 });
 
@@ -366,7 +310,6 @@ NCprogramRoter.post(`/sendMTrlIssue`, async (req, res, next) => {
 
 //Button DELETE
 NCprogramRoter.post(`/DeleteNCProgram`, async (req, res, next) => {
-	// console.log("req.body /getFormData is",req.body);
 	let query = `DELETE FROM magodmis.ncprograms WHERE NCProgramNo='${req.body.selectedNCprogram.NCProgramNo}'`;
 	try {
 		misQueryMod(query, (err, data) => {
@@ -385,7 +328,6 @@ NCprogramRoter.post(`/DeleteNCProgram`, async (req, res, next) => {
 
 ///Save Button
 NCprogramRoter.post(`/ButtonSave`, async (req, res, next) => {
-	// console.log("req.body /getFormData is",req.body);
 	let query = `Update magodmis.nc_task_list set Machine='${req.body.selectedMachine}' WHERE NcTaskId='${req.body.NCprogramForm[0].NcTaskId}'`;
 	try {
 		misQueryMod(query, (err, data) => {
