@@ -6,7 +6,23 @@ const cors = require("cors");
 // const fileUpload = require('express-fileupload');
 
 const app = express();
+const {
+	misQuery,
+	setupQuery,
+	qtnQuery,
+	misQueryMod,
+	qtnQueryMod,
+	qtnQueryModv2,
+	slsQueryMod,
+	mchQueryMod,
+	mtrlQueryMod,
+	setupQueryMod,
+} = require("./helpers/dbconn");
 
+setupQuery("SELECT 1", (res) => {
+	console.log("Connected to MySQL successfully. ");
+});
+app.use(cors());
 const userRouter = require("./routes/user");
 
 const unitRouter = require("./routes/units");
@@ -38,15 +54,16 @@ const accountsRouter = require("./routes/accounts");
 const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
+
 const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
 const CombinedScheduleCreate = require("./routes/CombinedSchedule/CombinedScheduleCreate");
 const scheduleListCombined = require("./routes/CombinedSchedule/scheduleListCombined");
 const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
-// const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
 const NCProgramRouter = require("./routes/OrderRoutes/NCprogram");
-app.use("/NCProgram", NCProgramRouter);
+const taskSheet = require("./routes/taskSheet");
+const solidState = require("./routes/solidState");
+const co2 = require("./routes/co2");
 
-app.use(cors());
 app.use(bodyParser.json());
 app.use("/user", userRouter);
 app.use("/units", unitRouter);
@@ -80,6 +97,12 @@ app.use("/orderList", orderListRouter);
 app.use("/ScheduleList", ScheduleListRouter);
 app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
 app.use("/scheduleListCombined", scheduleListCombined);
+
+app.use("/productionSchCreation", ProductionSchCreationRouter);
+app.use("/NCProgram", NCProgramRouter);
+app.use("/taskSheet", taskSheet);
+app.use("/solidState", solidState);
+app.use("/co2", co2);
 
 // Deleted routess
 // NEW ORDER ROUTES

@@ -257,7 +257,7 @@ scheduleList.post('/updateTask', jsonParser, async (req, res, next) => {
 
   ///Distribute Parts
   scheduleList.post('/distributeParts', jsonParser, async (req, res, next) => {
-    console.log(req.body,"req.ody");
+    // console.log(req.body,"req.ody");
     try {
       // Fetch part details from orderscheduledetails
       const partQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.selectedRow.ScheduleId}';`;
