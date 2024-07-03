@@ -37,7 +37,6 @@ jobWork.get('/getSalesContactList', jsonParser, async (req, res, next) => {
 });
 
 jobWork.post('/getRightTableData', jsonParser, async (req, res, next) => {
-  // console.log("req.body right table",req.body);
   try {
     mchQueryMod(`SELECT o.* FROM magodmis.orderschedule o WHERE  o.Schedule_Status = 'Tasked' AND o.ScheduleType NOT LIKE 'Combined' AND o.Cust_code = '${req.body.custCode}'`, (err, data) => {
       if (err) logger.error(err);
@@ -73,7 +72,6 @@ jobWork.post('/prepareSchedule', jsonParser, async (req, res, next) => {
 
 // Create Schedule
 jobWork.post('/createSchedule', jsonParser, async (req, res, next) => {
-  console.log("req.body is", req.body);
   try {
     if (!req.body) {
       return res.status(400).json({ success: false, message: 'Request body is missing' });
@@ -106,24 +104,22 @@ jobWork.post('/createSchedule', jsonParser, async (req, res, next) => {
     const combinedScheduleNos = await Promise.all(updatePromises);
 
     const combinedScheduleNo = combinedScheduleNos[0]; // Assuming combinedScheduleNos is an array
-    const insertResult = await mchQueryMod1(`
-      INSERT INTO magodmis.orderschedule (
-        Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, 
-        SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-      combinedScheduleNo, '01', req.body.custCode, req.body.ScheduleDate,
-      req.body.schTgtDate, req.body.Delivery_Date, req.body.selectedSalesContact,
-      req.body.selectedDealingEngineer, req.body.PO, 'Combined', combinedScheduleNo + '01', 'Profile'
-    ]);
+const insertResult = await mchQueryMod1(`
+  INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Combined', ?, 'Profile')`, [
+    combinedScheduleNo, '01', req.body.custCode, req.body.ScheduleDate,
+    req.body.Date, req.body.Date, req.body.selectedSalesContact,
+    req.body.selectedSalesContact, 'Combined', combinedScheduleNo + ' 01'
+  ]);
 
-    const lastInsertId = insertResult.insertId;
-    console.log("lastInsertId", lastInsertId);
+const lastInsertId = insertResult.insertId;
+console.log("lastInsertId", lastInsertId);
 
-    // Execute additional update query
-    await mchQueryMod1(`
-      UPDATE magodmis.combined_schedule c
-      SET c.ScheduleID = ?
-      WHERE c.CmbSchID = ?`, [lastInsertId, cmbSchId]);
+ // Execute additional update query
+ await mchQueryMod1(`
+ UPDATE magodmis.combined_schedule c
+ SET c.ScheduleID = ?
+ WHERE c.CmbSchID = ?`, [lastInsertId, cmbSchId]);
 
     res.status(200).json({
       success: true,
@@ -138,6 +134,7 @@ jobWork.post('/createSchedule', jsonParser, async (req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
+
 
 // Function to insert into combined_schedule and return cmbSchId
 const insertIntoCombinedSchedule = async (custCode) => {
