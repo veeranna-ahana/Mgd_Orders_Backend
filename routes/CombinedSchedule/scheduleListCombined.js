@@ -294,43 +294,68 @@ scheduleListCombined.post('/updateTask', jsonParser, async (req, res, next) => {
 
   ///Distribute Parts
   scheduleListCombined.post('/distributeParts', jsonParser, async (req, res, next) => {
-    // console.log(req.body,"req.ody");
     try {
-      // Fetch part details from orderscheduledetails
-      const partQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.selectedRow.ScheduleId}';`;
-      const partResult = await mchQueryMod1(partQuery);
+      const scheduleList = req.body.scheduleListDetailsData;
   
-      // Iterate over each row in the result set
-      for (const part of partResult) {
-        // Fetch schPart details from combined_schedule_part_details
-        const schPartQuery = `SELECT * FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
-        const schPartResult = await mchQueryMod1(schPartQuery);
-        const schPart = schPartResult[0];
+      if (!Array.isArray(scheduleList) || scheduleList.length === 0) {
+        return res.status(400).send({ error: "Invalid request: scheduleListDetailsData is missing or not properly structured" });
+      }
   
-        // Fetch TotQtyScheduled from combined_schedule_part_details
-        const totQtyScheduledQuery = `SELECT QtyScheduled FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
-        const totQtyScheduledResult = await mchQueryMod1(totQtyScheduledQuery);
-        const TotQtyScheduled = totQtyScheduledResult[0].QtyScheduled;
-
+      for (const selectedRow of scheduleList) {
+        const scheduleId = selectedRow.ScheduleId;
   
-        // Check condition: If TotQtyScheduled = part.QtyCleared
-        if (TotQtyScheduled === part.QtyCleared) {
-          // Update schPart.QtyCleared = schPart.QtyScheduled
-          const updateQtyClearedQuery = `UPDATE magodmis.combined_schedule_part_details SET QtyCleared=${schPart.QtyScheduled} WHERE N_SchDetailsID='${part.SchDetailsId}';`;
-          await mchQueryMod1(updateQtyClearedQuery);
-        } else if (part.QtyCleared !== 0) {
-          // Send response and display manual distribution message
-          res.send({ error: "Distribute manually for " + part.DwgName });
+        if (!scheduleId) {
+          console.error(`Missing ScheduleId for entry: ${JSON.stringify(selectedRow)}`);
+          continue; // Skip this iteration if ScheduleId is missing
+        }
+  
+        // Fetch part details from orderscheduledetails
+        const partQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${scheduleId}';`;
+        const partResult = await mchQueryMod1(partQuery);
+  
+        for (const part of partResult) {
+          if (!part.SchDetailsId) {
+            console.error(`Missing SchDetailsId for ScheduleId ${scheduleId}`);
+            continue; // Skip to next iteration if SchDetailsId is missing
+          }
+  
+          // Fetch schPart details from combined_schedule_part_details
+          const schPartQuery = `SELECT * FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
+          const schPartResult = await mchQueryMod1(schPartQuery);
+          const schPart = schPartResult[0];
+  
+          // Fetch TotQtyScheduled from combined_schedule_part_details
+          const totQtyScheduledQuery = `SELECT QtyScheduled FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
+          const totQtyScheduledResult = await mchQueryMod1(totQtyScheduledQuery);
+          const TotQtyScheduled = totQtyScheduledResult[0].QtyScheduled;
+  
+          // Check condition: If TotQtyScheduled = part.QtyCleared
+          if (TotQtyScheduled === part.QtyCleared) {
+            // Update schPart.QtyCleared = schPart.QtyScheduled
+            const updateQtyClearedQuery = `UPDATE magodmis.combined_schedule_part_details SET QtyCleared=${schPart.QtyScheduled} WHERE N_SchDetailsID='${part.SchDetailsId}'`;
+            await mchQueryMod1(updateQtyClearedQuery);
+          } else if (part.QtyCleared !== 0) {
+            // Send response and display manual distribution message
+            return res.send({ error: "Distribute manually for " + part.DwgName });
+          }
         }
       }
-      
+  
       // Send response and display success message
-    res.send({ success: "Parts Distributed" });
-
+      res.send({ success: "Parts Distributed" });
+  
     } catch (error) {
       // Handle errors
       next(error);
     }
   });
+  
+  
+  
+  
+  
+
+  
+  
   
 module.exports = scheduleListCombined;
