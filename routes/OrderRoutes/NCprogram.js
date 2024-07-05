@@ -9,7 +9,6 @@ const {
 } = require("../../helpers/dbconn");
 
 NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
-    // console.log("req.body /getFormData is",req.body);
     let query = `SELECT n.*,t.DwgName as AssyName FROM magodmis.nc_task_list n,magodmis.task_partslist t 
     WHERE n.NcTaskId='${req.body.rowselectTaskMaterial.NcTaskId}' AND t.NcTaskId=n.NcTaskId`;
     try {
@@ -18,7 +17,7 @@ NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
                 console.log("err", err);
             } else {
                 res.send(data);
-                //   console.log("data",data)
+                  console.log("data",data)
             }
         });
     } catch (error) {
@@ -30,7 +29,7 @@ NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
 NCprogramRoter.post(`/getMachines`, async (req, res, next) => {
     // console.log("req.body /getMachines is",req.body);
     let query = `SELECT m.RefProcess,  m1.* FROM machine_data.machine_process_list m, machine_data.machine_list m1 
-    WHERE m.RefProcess='${req.body.NCprogramForm[0].Operation}' AND m1.Machine_srl=m.Machine_srl`;
+    WHERE m.RefProcess='${req.body.NCprogramForm.Operation}' AND m1.Machine_srl=m.Machine_srl`;
     try {
         misQueryMod(query, (err, data) => {
             if (err) {
@@ -55,6 +54,8 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
         }
 
         const { NcTaskId, TaskNo } = NCprogramForm[0];
+        console.log("NcTaskId is",NcTaskId);
+
 
         // Check if Quantity Tasked has already been programmed
         const checkQuantityQuery = `SELECT * FROM magodmis.task_partslist WHERE NcTaskId='${NcTaskId}'`;
@@ -67,7 +68,7 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
             } else {
                 const { QtyToNest, QtyNested } = quantityData[0];
 
-                if (QtyToNest > QtyNested) {
+                if (QtyToNest === QtyNested) {
                     return res.status(400).json({ message: "Quantity Tasked has already been programmed" });
                 } else {
                     // Get the running number

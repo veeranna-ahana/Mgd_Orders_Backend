@@ -177,12 +177,11 @@ scheduleListCombined.post('/OriginalTable2', jsonParser, async (req, res, next) 
 
 //Onclick of Update To Original Schedule
 scheduleListCombined.post('/updateToOriganalSchedule', jsonParser, async (req, res, next) => {
-    // console.log("req.body", req.body);
     try {
         const scheduleId = req.body.selectedRow.ScheduleId;
         
         // Query to fetch rows from orderscheduledetails
-        const ordersQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId=?;`;
+        const ordersQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${scheduleId}';`;
         const ordersResult = await mchQueryMod1(ordersQuery, [scheduleId]);
 
         // Loop through each row in the result
@@ -190,8 +189,9 @@ scheduleListCombined.post('/updateToOriganalSchedule', jsonParser, async (req, r
             const schDetailsId = orderRow.SchDetailsID;
 
             // Query to fetch rows from combined_schedule_part_details
-            const combinedQuery = `SELECT * FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID=?;`;
+            const combinedQuery = `SELECT * FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${schDetailsId}';`;
             const combinedResult = await mchQueryMod1(combinedQuery, [schDetailsId]);
+
 
             // Loop through each row in the combinedResult
             for (const combinedRow of combinedResult) {
@@ -210,15 +210,19 @@ scheduleListCombined.post('/updateToOriganalSchedule', jsonParser, async (req, r
                         t.QtyProduced = t.QtyProduced + (c.QtyCleared - c.QtyDistributed),
                         t.QtyCleared = t.QtyCleared + (c.QtyCleared - c.QtyDistributed)
                     WHERE 
-                        c.cmbSchId = ? AND t.SchDetailsId = c.O_SchDetailsID AND c.cmbSchPartID = ?;
+                        c.cmbSchId = '${cmbSchId}' AND t.SchDetailsId = c.O_SchDetailsID AND c.cmbSchPartID = '${cmbSchPartID}';
                 `;
+
+
 
                 // Update query for setting QtyDistributed in combined_schedule_part_details
                 const updateQtyDistributedQuery = `
                     UPDATE magodmis.combined_schedule_part_details c 
                     SET c.QtyDistributed = c.QtyCleared 
-                    WHERE c.cmbSchPartID = ?;
+                    WHERE c.cmbSchPartID ='${cmbSchPartID}' ;
                 `;
+
+
 
                 // Update query for task_partslist and orderscheduledetails
                 const updateTaskOrdersQuery = `
@@ -230,8 +234,9 @@ scheduleListCombined.post('/updateToOriganalSchedule', jsonParser, async (req, r
                         o.Part_Area = t.Part_Area, 
                         o.UnitWt = t.Unit_Wt 
                     WHERE 
-                        o.ScheduleId = ? AND o.SchDetailsId = t.SchDetailsId;
+                        o.ScheduleId = '${ScheduleID}'  AND o.SchDetailsId = t.SchDetailsId;
                 `;
+
 
                 // Execute the update queries with parameters
                 await mchQueryMod1(updateCombinedQuery, [cmbSchId, cmbSchPartID]);
@@ -294,43 +299,132 @@ scheduleListCombined.post('/updateTask', jsonParser, async (req, res, next) => {
 
   ///Distribute Parts
   scheduleListCombined.post('/distributeParts', jsonParser, async (req, res, next) => {
-    // console.log(req.body,"req.ody");
     try {
-      // Fetch part details from orderscheduledetails
-      const partQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.selectedRow.ScheduleId}';`;
-      const partResult = await mchQueryMod1(partQuery);
+      const scheduleList = req.body.scheduleListDetailsData;
   
-      // Iterate over each row in the result set
-      for (const part of partResult) {
-        // Fetch schPart details from combined_schedule_part_details
-        const schPartQuery = `SELECT * FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
-        const schPartResult = await mchQueryMod1(schPartQuery);
-        const schPart = schPartResult[0];
+      if (!Array.isArray(scheduleList) || scheduleList.length === 0) {
+        return res.status(400).send({ error: "Invalid request: scheduleListDetailsData is missing or not properly structured" });
+      }
   
-        // Fetch TotQtyScheduled from combined_schedule_part_details
-        const totQtyScheduledQuery = `SELECT QtyScheduled FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
-        const totQtyScheduledResult = await mchQueryMod1(totQtyScheduledQuery);
-        const TotQtyScheduled = totQtyScheduledResult[0].QtyScheduled;
-
+      for (const selectedRow of scheduleList) {
+        const scheduleId = selectedRow.ScheduleId;
   
-        // Check condition: If TotQtyScheduled = part.QtyCleared
-        if (TotQtyScheduled === part.QtyCleared) {
-          // Update schPart.QtyCleared = schPart.QtyScheduled
-          const updateQtyClearedQuery = `UPDATE magodmis.combined_schedule_part_details SET QtyCleared=${schPart.QtyScheduled} WHERE N_SchDetailsID='${part.SchDetailsId}';`;
-          await mchQueryMod1(updateQtyClearedQuery);
-        } else if (part.QtyCleared !== 0) {
-          // Send response and display manual distribution message
-          res.send({ error: "Distribute manually for " + part.DwgName });
+        if (!scheduleId) {
+          console.error(`Missing ScheduleId for entry: ${JSON.stringify(selectedRow)}`);
+          continue; // Skip this iteration if ScheduleId is missing
+        }
+  
+        // Fetch part details from orderscheduledetails
+        const partQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${scheduleId}';`;
+        const partResult = await mchQueryMod1(partQuery);
+  
+        for (const part of partResult) {
+          if (!part.SchDetailsId) {
+            console.error(`Missing SchDetailsId for ScheduleId ${scheduleId}`);
+            continue; // Skip to next iteration if SchDetailsId is missing
+          }
+  
+          // Fetch schPart details from combined_schedule_part_details
+          const schPartQuery = `SELECT * FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
+          const schPartResult = await mchQueryMod1(schPartQuery);
+          const schPart = schPartResult[0];
+  
+          // Fetch TotQtyScheduled from combined_schedule_part_details
+          const totQtyScheduledQuery = `SELECT QtyScheduled FROM magodmis.combined_schedule_part_details WHERE N_SchDetailsID='${part.SchDetailsId}';`;
+          const totQtyScheduledResult = await mchQueryMod1(totQtyScheduledQuery);
+          const TotQtyScheduled = totQtyScheduledResult[0].QtyScheduled;
+  
+          // Check condition: If TotQtyScheduled = part.QtyCleared
+          if (TotQtyScheduled === part.QtyCleared) {
+            // Update schPart.QtyCleared = schPart.QtyScheduled
+            const updateQtyClearedQuery = `UPDATE magodmis.combined_schedule_part_details SET QtyCleared=${schPart.QtyScheduled} WHERE N_SchDetailsID='${part.SchDetailsId}'`;
+            await mchQueryMod1(updateQtyClearedQuery);
+          } else if (part.QtyCleared !== 0) {
+            // Send response and display manual distribution message
+            return res.send({ error: "Distribute manually for " + part.DwgName });
+          }
         }
       }
-      
+  
       // Send response and display success message
-    res.send({ success: "Parts Distributed" });
-
+      res.send({ success: "Parts Distributed" });
+  
     } catch (error) {
       // Handle errors
       next(error);
     }
   });
+  
+  
+  //Print
+  scheduleListCombined.post(`/PrintPdf`, async (req, res, next) => {
+    console.log("req.body.selectedRow[0].ScheduleId is",req.body.formdata.ScheduleId);
+    try {
+      let query = `SELECT * FROM magodmis.orderscheduledetails where ScheduleId='${req.body.formdata.ScheduleId}';`;
+  
+      misQueryMod(query, (err, data) => {
+        if (err) {
+          console.log("err", err);
+          res
+            .status(500)
+            .send({ error: "An error occurred while fetching data" });
+        } else {
+          if (data.length > 0) {
+            // Group data by task number
+            const groupedData = {};
+            data.forEach((item) => {
+              const TaskNo = item.TaskNo;
+              if (!groupedData[TaskNo]) {
+                groupedData[TaskNo] = [];
+              }
+              groupedData[TaskNo].push(item);
+            });
+  
+            // Format grouped data
+            const formattedData = [];
+            for (const TaskNo in groupedData) {
+              formattedData.push({
+                taskNo: TaskNo,
+                Mtrl_Code: groupedData[TaskNo][0].Mtrl_Code,
+                Mtrl_Source: groupedData[TaskNo][0].Mtrl_Source,
+                Operation: groupedData[TaskNo][0].Operation,
+                otherdetails: groupedData[TaskNo],
+              });
+            }
+  
+            res.send(formattedData);
+          } else {
+            res
+              .status(404)
+              .send({ error: "No data found for the provided ScheduleId" });
+          }
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+
+  //get customer name
+  scheduleListCombined.post(`/getCustomerNamePDF`, async (req, res, next) => {
+    let query = `SELECT Cust_name FROM magodmis.cust_data  where Cust_Code='${req.body.formdata.Cust_Code}'
+    `;
+  
+    try {
+      misQueryMod(query, (err, data) => {
+        if (err) {
+          console.log("err", err);
+        } else {
+          res.send(data);
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  
+  
   
 module.exports = scheduleListCombined;

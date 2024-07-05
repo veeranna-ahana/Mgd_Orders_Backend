@@ -89,7 +89,6 @@ ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
 
 //get DWg List of Selected Task
 ScheduleListRouter.post(`/getDwgDataListTMTab`, async (req, res, next) => {
-  console.log("req.body /getDwgDataListTMTab is",req.body);
   let query = `SELECT * FROM magodmis.orderscheduledetails where NcTaskId='${req.body.list.NcTaskId}'`;
 
   try {
@@ -125,7 +124,6 @@ ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
 
 //Button Save
 ScheduleListRouter.post(`/save`, async (req, res, next) => {
-  console.log("req.body",req.body.changedEngineer);
   // Constructing the query to update orderscheduledetails table
   let query = `UPDATE magodmis.orderscheduledetails o,
     (SELECT  CASE
@@ -175,7 +173,8 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
 
 //Onclick of Suspend
 ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
-  let query = `SELECT * FROM magodmis.orderschedule WHERE ScheduleId='${req.body.formdata[0].ScheduleId}';`;
+  // console.log("newState is",req.body.newState[0]);
+  let query = `SELECT * FROM magodmis.orderschedule WHERE ScheduleId='${req.body.newState[0].ScheduleId}';`;
 
   try {
     misQueryMod(query, (err, data) => {
@@ -205,7 +204,7 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
                                 ELSE 'Created' END AS STATUS, o.SchDetailsID
                                 FROM magodmis.orderscheduledetails o, magodmis.orderschedule o1
                                 WHERE o1.ScheduleId=o.ScheduleId 
-                                AND o1.ScheduleId='${req.body.formdata[0].ScheduleId}') A
+                                AND o1.ScheduleId='${req.body.newState[0].ScheduleId}') A
                             SET o.Schedule_Status = a.Status
                             WHERE a.SchDetailsID = o.SchDetailsID;`;
 
@@ -238,7 +237,7 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
             // Update the Schedule_Status of orderschedule table to 'Suspended'
             const updateScheduleQuery = `UPDATE magodmis.orderschedule
                             SET Schedule_Status = 'Suspended'
-                            WHERE ScheduleId = '${req.body.formdata[0].ScheduleId}';`;
+                            WHERE ScheduleId = '${req.body.newState[0].ScheduleId}';`;
 
             misQueryMod(updateScheduleQuery, (err, result) => {
               if (err) {
@@ -248,7 +247,7 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
                 // Update suspension status of tasks and programs
                 const suspendUpdateQuery = `UPDATE magodmis.nc_task_list n, magodmis.ncprograms n1
                                     SET n.Suspend = 1, n1.Suspend = 1
-                                    WHERE n.ScheduleID = '${req.body.formdata[0].ScheduleId}' AND n1.NcTaskId = n.NcTaskId;`;
+                                    WHERE n.ScheduleID = '${req.body.newState[0].ScheduleId}' AND n1.NcTaskId = n.NcTaskId;`;
 
                 misQueryMod(suspendUpdateQuery, (err, result) => {
                   if (err) {
@@ -277,12 +276,13 @@ ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
   }
 });
 
+
 //Release Button
 ScheduleListRouter.post(`/releaseClick`, async (req, res, next) => {
   try {
     const updateScheduleQuery = `UPDATE magodmis.orderschedule
                                  SET Schedule_Status = 'Tasked'
-                                 WHERE ScheduleId = '${req.body.formdata[0].ScheduleId}';`;
+                                 WHERE ScheduleId = '${req.body.newState[0].ScheduleId}';`;
 
     misQueryMod(updateScheduleQuery, (err, result) => {
       if (err) {
@@ -291,7 +291,7 @@ ScheduleListRouter.post(`/releaseClick`, async (req, res, next) => {
       } else {
         const suspendUpdateQuery = `UPDATE magodmis.nc_task_list n, magodmis.ncprograms n1
                                     SET n.Suspend = 0, n1.Suspend = 0
-                                    WHERE n.ScheduleID = '${req.body.formdata[0].ScheduleId}' AND n1.NcTaskId = n.NcTaskId;`;
+                                    WHERE n.ScheduleID = '${req.body.newState[0].ScheduleId}' AND n1.NcTaskId = n.NcTaskId;`;
 
         misQueryMod(suspendUpdateQuery, (err, result) => {
           if (err) {
@@ -428,8 +428,9 @@ ScheduleListRouter.post(`/taskOnclick`, async (req, res, next) => {
 
 //Onclick of Button Cancel
 ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
+  console.log("req.body",req.body.newState);
   try {
-    let query = `SELECT * FROM magodmis.orderscheduledetails WHERE SchDetailsID='${req.body.scheduleDetailsRow.SchDetailsID}';`;
+    let query = `SELECT * FROM magodmis.orderscheduledetails WHERE SchDetailsID='${req.body.newState[0].SchDetailsID}';`;
 
     misQueryMod(query, (err, data) => {
       if (err) {
@@ -443,8 +444,8 @@ ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
             // Execute the update queries
             const updateQuery1 = `UPDATE magodmis.orderscheduledetails o SET o.QtyScheduled=0 WHERE o.SchDetailsID=${resultQuery.SchDetailsID};`;
             const updateQuery2 = `UPDATE order_details o SET o.QtyScheduled=o.QtyScheduled-${resultQuery.QtyScheduled} WHERE o.OrderDetailID=${resultQuery.OrderDetailID};`;
-            const updateQuery3 = `UPDATE orderschedule SET Schedule_Status='Cancelled' WHERE ScheduleId=${req.body.scheduleDetailsRow.ScheduleId};`;
-            const deleteQuery = `DELETE magodmis.t, magodmis.n FROM magodmis.nc_task_list AS n, magodmis.task_partslist AS t WHERE n.ScheduleID='${req.body.scheduleDetailsRow.ScheduleId}' AND t.NcTaskId=n.NcTaskId;`;
+            const updateQuery3 = `UPDATE orderschedule SET Schedule_Status='Cancelled' WHERE ScheduleId=${req.body.newState[0].ScheduleId};`;
+            const deleteQuery = `DELETE magodmis.t, magodmis.n FROM magodmis.nc_task_list AS n, magodmis.task_partslist AS t WHERE n.ScheduleID='${req.body.newState[0].ScheduleId}' AND t.NcTaskId=n.NcTaskId;`;
 
             misQueryMod(updateQuery1, (err, result1) => {
               if (err) {
@@ -500,6 +501,7 @@ ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
   try {
@@ -659,13 +661,18 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                   //   req.body.formdata[0].ScheduleId
                                   // );
 
-                                  let updateSRLQuery = `UPDATE magodmis.orderschedule 
-                                     SET OrdSchNo='${neworderSch}',ScheduleNo='${nextSRL}'
-                                      WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+                                  console.log("neworderSch is",neworderSch);
 
-                                      let updateQuery2 = `UPDATE orderschedule SET Schedule_status='Tasked', 
-                                              schTgtDate='${formattedDate}', ScheduleDate=now(),OrdSchNo='${neworderSch}'
-                                              WHERE ScheduleID='${req.body.formdata[0].ScheduleId}'`;
+                                  let updateSRLQuery = `UPDATE magodmis.orderschedule 
+                                  SET OrdSchNo='${neworderSch}', 
+                                      ScheduleNo='${nextSRL}', 
+                                      Schedule_status='Tasked', 
+                                      schTgtDate='${formattedDate}', 
+                                      ScheduleDate=now() 
+                                  WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+                                      let updateQuery2 = `UPDATE orderscheduledetails SET OrderScheduleNo='${neworderSch}', ScheduleNo='${nextSRL}' 
+                                      WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
 
                                   misQueryMod(
                                     updateSRLQuery,
@@ -793,7 +800,7 @@ scheduleDetails.forEach((row) => {
                                                                             TaskNo;
 
                                                                           // Insert into magodmis.task_partslist table
-                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest,QtyNested,OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
+                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest,OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
 
                                                                           // Execute the insert query
                                                                           misQueryMod(
