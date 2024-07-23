@@ -105,11 +105,11 @@ CombinedScheduleCreate.post('/createSchedule', jsonParser, async (req, res, next
 
     const combinedScheduleNo = combinedScheduleNos[0]; // Assuming combinedScheduleNos is an array
     const insertResult = await mchQueryMod1(`
-  INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type)
-  VALUES ('${combinedScheduleNo}', '01', '${req.body.custCode}', '${req.body.ScheduleDate}', '${req.body.Date}', '${req.body.Date}', '${req.body.selectedSalesContact}', '${ req.body.selectedSalesContact}', '${req.body.rowselectleft[0].PO}', 'Combined', '${combinedScheduleNo + ' 01'}', 'Profile')`, [
+  INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type,Schedule_Status)
+  VALUES ('${combinedScheduleNo}', '01', '${req.body.custCode}', '${req.body.ScheduleDate}', '${req.body.Date}', '${req.body.Date}', '${req.body.selectedSalesContact}', '${ req.body.selectedSalesContact}', '${req.body.rowselectleft[0].PO}', 'Combined', '${combinedScheduleNo + ' 01'}', 'Profile','Tasked')`, [
     req.body.selectedSalesContact, '01', req.body.custCode, req.body.ScheduleDate,
       req.body.Date, req.body.Date, req.body.selectedSalesContact,
-      req.body.selectedSalesContact, 'Combined', combinedScheduleNo + ' 01'
+      req.body.selectedSalesContact, 'Combined', combinedScheduleNo + ' 01',
     ]);
 
     const lastInsertId = insertResult.insertId;
@@ -190,11 +190,12 @@ const updateOrderscheduleAndNCTaskList = async (scheduleStatus, scheduleId, cmbS
       SET o1.TStatus = 'Combined'
       WHERE o1.scheduleId = '${scheduleId}'`, [scheduleId]);
 
-    // Update magodmis.orderschedule
-    await mchQueryMod1(`
-      UPDATE magodmis.orderschedule o
-      SET o.Schedule_Status = '${'Comb/' + combinedScheduleNo}'
-      WHERE o.ScheduleID = '${scheduleId}'`, ['Comb/' + combinedScheduleNo, scheduleId]);
+    // // Update magodmis.orderschedule
+    // console.log("combinedScheduleNo",combinedScheduleNo + ' 01');
+    // await mchQueryMod1(`
+    //   UPDATE magodmis.orderschedule o
+    //   SET o.Schedule_Status = ''
+    //   WHERE o.OrdSchNo = '${combinedScheduleNo + ' 01'}'`, ['Comb/' + combinedScheduleNo, scheduleId]);
 
     return combinedScheduleNo;
   } catch (error) {
@@ -238,8 +239,8 @@ CombinedScheduleCreate.post('/createScheduleforSales', jsonParser, async (req, r
 
     const combinedScheduleNo = combinedScheduleNos[0]; // Assuming combinedScheduleNos is an array
     const insertResult = await mchQueryMod1(`
-  INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type)
-  VALUES ('${combinedScheduleNo}', '01', '${req.body.custCode}', '${req.body.ScheduleDate}', '${req.body.Date}', '${req.body.Date}', '${req.body.selectedSalesContact}', '${req.body.selectedSalesContact}', '${req.body.rowselectleft[0].PO}', 'Combined', '${combinedScheduleNo + ' 01'}', 'Profile')`, [
+  INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type,Schedule_Status)
+  VALUES ('${combinedScheduleNo}', '01', '${req.body.custCode}', '${req.body.ScheduleDate}', '${req.body.Date}', '${req.body.Date}', '${req.body.selectedSalesContact}', '${req.body.selectedSalesContact}', '${req.body.rowselectleft[0].PO}', 'Combined', '${combinedScheduleNo + ' 01'}', 'Profile','Tasked')`, [
       combinedScheduleNo, '01', req.body.custCode, req.body.ScheduleDate,
       req.body.Date, req.body.Date, req.body.selectedSalesContact,
       req.body.selectedSalesContact, 'Combined', combinedScheduleNo + ' 01'
@@ -323,11 +324,11 @@ const updateOrderscheduleAndNCTaskList1 = async (scheduleStatus, scheduleId, cmb
       SET o1.TStatus = 'Combined'
       WHERE o1.scheduleId = '${scheduleId}'`, [scheduleId]);
 
-    // Update magodmis.orderschedule
-    await mchQueryMod1(`
-      UPDATE magodmis.orderschedule o
-      SET o.Schedule_Status = '${'Comb/' + combinedScheduleNo}'
-      WHERE o.ScheduleID = '${scheduleId}'`, ['Comb/' + combinedScheduleNo, scheduleId]);
+    // // Update magodmis.orderschedule
+    // await mchQueryMod1(`
+    //   UPDATE magodmis.orderschedule o
+    //   SET o.Schedule_Status = 'Tasked'
+    //   WHERE o.OrdSchNo = '${combinedScheduleNo}'`, ['Comb/' + combinedScheduleNo, scheduleId]);
 
     return combinedScheduleNo;
   } catch (error) {
