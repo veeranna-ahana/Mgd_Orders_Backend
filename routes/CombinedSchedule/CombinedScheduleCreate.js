@@ -105,6 +105,7 @@ CombinedScheduleCreate.post(
 	"/prepareScheduleSales",
 	jsonParser,
 	async (req, res, next) => {
+		console.log("req.body of sales is", req.body);
 		try {
 			mchQueryMod(
 				`SELECT n.NcTaskId, n.TaskNo, o.SchDetailsID, o.ScheduleId, 
@@ -207,7 +208,7 @@ CombinedScheduleCreate.post(
 			);
 
 			// Folder creation
-			const baseDir = path.join("E:", "Jigani", "Wo");
+			const baseDir = path.join("C:", "Magod", "Jigani", "Wo");
 			const combinedScheduleDir = path.join(baseDir, combinedScheduleNo);
 
 			const subfolders = [
@@ -415,7 +416,7 @@ CombinedScheduleCreate.post(
 			);
 
 			// Folder creation
-			const baseDir = path.join("E:", "Jigani", "Wo");
+			const baseDir = path.join("C:", "Magod", "Jigani", "Wo");
 			const combinedScheduleDir = path.join(baseDir, combinedScheduleNo);
 
 			const subfolders = [
