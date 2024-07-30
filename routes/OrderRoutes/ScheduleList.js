@@ -124,6 +124,7 @@ ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
 
 //Button Save
 ScheduleListRouter.post(`/save`, async (req, res, next) => {
+  console.log("req.body of save is",req.body.formdata);
   // Constructing the query to update orderscheduledetails table
   let query = `UPDATE magodmis.orderscheduledetails o,
     (SELECT  CASE
@@ -138,7 +139,7 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
     ELSE 'Created' END AS STATUS, o.SchDetailsID
     FROM magodmis.orderscheduledetails o,magodmis.orderschedule o1
     WHERE o1.ScheduleId=o.ScheduleId 
-    AND o1.ScheduleId='${req.body.scheduleDetailsRow.ScheduleId}' ) A
+    AND o1.ScheduleId='${req.body.formdata[0].ScheduleId}' ) A
     SET o.Schedule_Status=a.Status
     WHERE a.SchDetailsID= o.SchDetailsID`;
 
