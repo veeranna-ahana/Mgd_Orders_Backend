@@ -266,6 +266,7 @@ NCprogramRoter.post(`/ButtonSave`, async (req, res, next) => {
 
 //getNCProram Parts Data
 NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
+    console.log("req.body.NCprogramForm[0].NcTaskId is",req.body.NCprogramForm[0].NcTaskId);
     let queryCheckBOM = `SELECT t.HasBOM FROM magodmis.task_partslist t WHERE t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}'`;
   
     try {

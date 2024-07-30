@@ -14,9 +14,10 @@ var jsonParser = bodyParser.json();
 
 ///////////////////////////////////////////////////
 // Define the base directory path
-const baseDirectory = 'E:\Jigani\Wo';
+const baseDirectory = 'C:/Magod/Jigani/Wo';
 
 scheduleListCombined.post('/files', jsonParser, async (req, res, next) => {
+  console.log("selectedRow?.Order_No is", req.body);
 
   // Access OrderNo from the nested structure
   const { requestData } = req.body;
@@ -41,6 +42,7 @@ scheduleListCombined.post('/files', jsonParser, async (req, res, next) => {
     return res.status(404).send(`Directory does not exist: ${directoryPath}`);
   }
 
+  console.log('Received request to list files from directory:', directoryPath);
 
   // Read the directory to get the list of files
   fs.readdir(directoryPath, (err, files) => {
@@ -498,9 +500,9 @@ scheduleListCombined.post('/updateTask', jsonParser, async (req, res, next) => {
       const { selectedRow, orinalScheudledata } = requestData;
     
       const sourceDirs = orinalScheudledata.map(data => 
-        path.join('E:','Jigani', 'Wo', data.Order_No, 'DXF')
+        path.join('C:', 'Magod', 'Jigani', 'Wo', data.Order_No, 'DXF')
       );
-      const targetDir = path.join('E:','Jigani', 'Wo', selectedRow.Order_No, 'DXF');
+      const targetDir = path.join('C:', 'Magod', 'Jigani', 'Wo', selectedRow.Order_No, 'DXF');
     
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });

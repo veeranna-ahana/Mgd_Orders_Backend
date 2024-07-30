@@ -73,6 +73,7 @@ CombinedScheduleCreate.post('/prepareSchedule', jsonParser, async (req, res, nex
 
 
 CombinedScheduleCreate.post('/prepareScheduleSales', jsonParser, async (req, res, next) => {
+  console.log("req.body of sales is",req.body);
   try {
     mchQueryMod(`SELECT n.NcTaskId, n.TaskNo, o.SchDetailsID, o.ScheduleId, 
     o.Cust_Code, o.DwgName, o.Mtrl_Code,
@@ -138,7 +139,7 @@ CombinedScheduleCreate.post('/createSchedule', jsonParser, async (req, res, next
       WHERE c.CmbSchID = '${cmbSchId}'`, [lastInsertId, cmbSchId]);
 
     // Folder creation
-    const baseDir = path.join('E:','Jigani', 'Wo');
+    const baseDir = path.join('C:', 'Magod', 'Jigani', 'Wo');
     const combinedScheduleDir = path.join(baseDir, combinedScheduleNo);
 
     const subfolders = ['BOM', 'DespInfo', 'DXF', 'NestDXF', 'Parts', 'WO', 'WOL'];
@@ -281,7 +282,7 @@ CombinedScheduleCreate.post('/createScheduleforSales', jsonParser, async (req, r
       WHERE c.CmbSchID = '${cmbSchId}'`, [lastInsertId, cmbSchId]);
 
     // Folder creation
-    const baseDir = path.join('E:','Jigani', 'Wo');
+    const baseDir = path.join('C:', 'Magod', 'Jigani', 'Wo');
     const combinedScheduleDir = path.join(baseDir, combinedScheduleNo);
 
     const subfolders = ['BOM', 'DespInfo', 'DXF', 'NestDXF', 'Parts', 'WO', 'WOL'];
