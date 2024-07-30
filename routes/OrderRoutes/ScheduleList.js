@@ -652,16 +652,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 
                                   let neworderSch = `${req.body.formdata[0].Order_No} ${nextSRL}`;
 
-                                  // console.log(
-                                  //   "neworderSch is",
-                                  //   neworderSch,
-                                  //   "nextSRL is",
-                                  //   nextSRL,
-                                  //   "ScheduleId is",
-                                  //   req.body.formdata[0].ScheduleId
-                                  // );
-
-                                  console.log("neworderSch is",neworderSch);
+                             
 
                                   let updateSRLQuery = `UPDATE magodmis.orderschedule 
                                   SET OrdSchNo='${neworderSch}', 
@@ -686,7 +677,6 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                           error: "Internal Server Error",
                                         });
                                       } else {
-                                        console.log("result is", result4);
                                         misQueryMod(
                                           updateQuery2,
                                           (err, result2) => {
@@ -735,22 +725,23 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                                                 "Internal Server Error",
                                                             });
                                                         } else {
-                                                          const taskNumbers = {}; // Object to store task numbers for each combination
-let taskNumberCounter = 0; // Counter for generating task numbers
+                                                          const taskCounters = {}; // Object to store counters for each combination
+                                                          let taskNumber = 1; // Initialize task number
+            
+                                                          scheduleDetails.forEach((row) => {
+                                                            // Construct a unique key based on Mtrl_Code, MProcess, and Operation
+                                                            const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
+            
+                                                            // Check if this combination already has a task number
+                                                            if (!taskCounters[key]) {
+                                                              taskCounters[key] = taskNumber.toString().padStart(2, "0");
+                                                              taskNumber++; // Increment task number for the next unique combination
+                                                            }
+            
+                                                            // Generate the task number with the format "neworderSch taskNumber"
+                                                            const TaskNo = `${neworderSch} ${taskCounters[key]}`;
+            
 
-// Iterate through scheduleDetails to generate and update task numbers
-scheduleDetails.forEach((row) => {
-    // Increment the task number counter for each row
-    taskNumberCounter++;
-
-    // Construct a unique key based on Mtrl_Code, MProcess, and Operation
-    const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
-
-    // Generate the task number with the format "neworderSch taskNumber"
-    const TaskNo = `${neworderSch} ${taskNumberCounter.toString().padStart(2, "0")}`;
-
-                                                          
-                                                            // console.log("TaskNo",TaskNo);
 
                                                               // Insert into magodmis.nc_task_list table
                                                               let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,

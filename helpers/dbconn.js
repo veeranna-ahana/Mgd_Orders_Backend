@@ -209,6 +209,15 @@ let mchQueryMod = (m, callback) => {
 	});
 };
 
+// let mchQueryMod1 = async (m) => {
+// 	try {
+// 		const [rows, fields] = await mchConn.promise().query(m);
+// 		return rows;
+// 	} catch (error) {
+// 		throw error;
+// 	}
+// };
+
 module.exports = {
 	misQuery,
 	setupQuery,

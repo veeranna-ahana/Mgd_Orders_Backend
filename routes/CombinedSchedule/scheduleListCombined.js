@@ -1,12 +1,73 @@
-const scheduleListCombined = require("express").Router();
-const { error } = require("winston");
+const express = require('express');
+const scheduleListCombined = express.Router();
+const fs = require('fs');
+const path = require('path');
+const { error } = require('winston');
 const { misQuery, setupQuery, misQueryMod, mchQueryMod, productionQueryMod, mchQueryMod1 } = require('../../helpers/dbconn');
-const { logger } = require('../../helpers/logger')
-var bodyParser = require('body-parser')
-const moment = require('moment')
+const { logger } = require('../../helpers/logger');
+const bodyParser = require('body-parser');
+const moment = require('moment');
 
 // create application/json parser
 var jsonParser = bodyParser.json();
+
+
+///////////////////////////////////////////////////
+// Define the base directory path
+const baseDirectory = 'E:\Jigani\Wo';
+
+scheduleListCombined.post('/files', jsonParser, async (req, res, next) => {
+
+  // Access OrderNo from the nested structure
+  const { requestData } = req.body;
+  const { OrderNo } = requestData;
+
+  if (!OrderNo) {
+    return res.status(400).send('OrderNo is missing in the request data');
+  }
+
+  const orderNumber = Number(OrderNo); // Convert OrderNo to number if needed
+
+  if (isNaN(orderNumber)) {
+    return res.status(400).send('Invalid OrderNo');
+  }
+
+  // Construct the directory path with the OrderNo and 'DXF' appended
+  const directoryPath = path.join(baseDirectory, orderNumber.toString(), 'DXF');
+
+  // Check if the directory exists
+  if (!fs.existsSync(directoryPath)) {
+    console.error(`Directory does not exist: ${directoryPath}`);
+    return res.status(404).send(`Directory does not exist: ${directoryPath}`);
+  }
+
+
+  // Read the directory to get the list of files
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error('Unable to scan directory:', err);
+      return res.status(500).send('Unable to scan directory: ' + err);
+    }
+
+    const fileDetails = files.map(file => ({
+      name: file,
+      url: `/schedule/uploads/${orderNumber.toString()}/DXF/${file}`
+    }));
+
+    console.log('Sending file list response');
+    res.send(fileDetails);
+    console.log("fileDetails is",fileDetails);
+  });
+});
+
+// Serve static files in the 'uploads' directory
+scheduleListCombined.use('/uploads', express.static(baseDirectory, {
+  setHeaders: function (res, path) {
+    res.set('Content-Disposition', 'attachment');
+  }
+}));
+
+////////////////////
 
 scheduleListCombined.get('/ScheduleListOrdered', jsonParser, async (req, res, next) => {
     try {
@@ -424,7 +485,56 @@ scheduleListCombined.post('/updateTask', jsonParser, async (req, res, next) => {
     }
   });
 
-  
+
+  //Copy Drawing
+  scheduleListCombined.post('/copyDwg', async (req, res, next) => {
+    try {
+      const requestData = req.body.requestData;
+      
+      if (!requestData || !requestData.selectedRow || !requestData.orinalScheudledata) {
+        return res.status(400).json({ success: false, message: 'Invalid request body' });
+      }
+    
+      const { selectedRow, orinalScheudledata } = requestData;
+    
+      const sourceDirs = orinalScheudledata.map(data => 
+        path.join('E:','Jigani', 'Wo', data.Order_No, 'DXF')
+      );
+      const targetDir = path.join('E:','Jigani', 'Wo', selectedRow.Order_No, 'DXF');
+    
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+    
+      sourceDirs.forEach((sourceDir) => {
+        fs.readdir(sourceDir, (err, files) => {
+          if (err) {
+            console.error(`Error reading directory ${sourceDir}:`, err);
+            return;
+          }
+    
+          files.forEach((file) => {
+            const sourceFilePath = path.join(sourceDir, file);
+            const targetFilePath = path.join(targetDir, file);
+    
+            fs.copyFile(sourceFilePath, targetFilePath, (err) => {
+              if (err) {
+                console.error(`Error copying file ${sourceFilePath} to ${targetFilePath}:`, err);
+              }
+            });
+          });
+        });
+      });
+    
+      res.status(200).json({
+        success: true,
+        message: 'Files copied successfully'
+      });
+    
+    } catch (error) {
+      next(error);
+    }
+  });
   
   
 module.exports = scheduleListCombined;
