@@ -73,7 +73,6 @@ CombinedScheduleCreate.post('/prepareSchedule', jsonParser, async (req, res, nex
 
 
 CombinedScheduleCreate.post('/prepareScheduleSales', jsonParser, async (req, res, next) => {
-  console.log("req.body of sales is",req.body);
   try {
     mchQueryMod(`SELECT n.NcTaskId, n.TaskNo, o.SchDetailsID, o.ScheduleId, 
     o.Cust_Code, o.DwgName, o.Mtrl_Code,
@@ -125,7 +124,7 @@ CombinedScheduleCreate.post('/createSchedule', jsonParser, async (req, res, next
     const combinedScheduleNo = combinedScheduleNos[0];
     const insertResult = await mchQueryMod1(`
       INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type, Schedule_Status)
-      VALUES ('${combinedScheduleNo}', '01', '${req.body.custCode}', '${req.body.ScheduleDate}', '${req.body.Date}', '${req.body.Date}', '${req.body.selectedSalesContact}', '${ req.body.selectedSalesContact}', '${req.body.rowselectleft[0].PO}', 'Combined', '${combinedScheduleNo + ' 01'}', 'Profile', 'Tasked')`, [
+      VALUES ('${combinedScheduleNo}', '01', '${req.body.custCode}', '${req.body.ScheduleDate}', '${req.body.Date}', '${req.body.Date}', '${req.body.selectedSalesContact}', '${req.body.selectedSalesContact}', '${req.body.rowselectleft[0].PO}', 'Combined', '${combinedScheduleNo + ' 01'}', 'Profile', 'Tasked')`, [
       req.body.selectedSalesContact, '01', req.body.custCode, req.body.ScheduleDate,
       req.body.Date, req.body.Date, req.body.selectedSalesContact,
       req.body.selectedSalesContact, 'Combined', combinedScheduleNo + ' 01',
@@ -137,6 +136,39 @@ CombinedScheduleCreate.post('/createSchedule', jsonParser, async (req, res, next
       UPDATE magodmis.combined_schedule c
       SET c.ScheduleID = '${lastInsertId}'
       WHERE c.CmbSchID = '${cmbSchId}'`, [lastInsertId, cmbSchId]);
+
+    // Additional operations: querying for each NcTaskId and generating task numbers
+    const taskDataPromises = rowselectleft.map(schedule => {
+      const { ScheduleId } = schedule;
+      return mchQueryMod1(`
+        SELECT * FROM magodmis.nc_task_list n
+        WHERE scheduleid = '${ScheduleId}'`, [ScheduleId]);
+    });
+
+    const DwgdataArray = await Promise.all(taskDataPromises);
+    const Dwgdata = DwgdataArray.flat();
+
+
+    const taskCounters = {};
+    let taskNumber = 1;
+
+    Dwgdata.forEach(async (row) => {
+      const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
+
+      if (!taskCounters[key]) {
+        taskCounters[key] = taskNumber.toString().padStart(2, "0");
+        taskNumber++;
+      }
+      row.TaskNo = `${combinedScheduleNo} 01 ${taskCounters[key]}`;
+
+      // Insert the task into the nc_task_list
+      const currentDateTime = new Date().toISOString().replace('T', ' ').split('.')[0]; // yyyy-mm-dd hh:mm:ss format
+      await mchQueryMod1(`
+        INSERT INTO magodmis.nc_task_list (TaskNo, ScheduleID, DeliveryDate, order_No, ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess)
+        VALUES ('${row.TaskNo}', '${lastInsertId}', '${currentDateTime}', '${combinedScheduleNo}', '${combinedScheduleNo} 01', '${req.body.custCode}', '${row.Mtrl_Code}', '${row.Mtrl}', '${row.Thickness}', 'Customer', '${row.NoOfDwgs}', '${row.TotalParts}', '${row.MProcess}')`, [
+        row.TaskNo, lastInsertId, currentDateTime, combinedScheduleNo, combinedScheduleNo + ' 01',
+        req.body.custCode, row.Mtrl_Code, row.Mtrl, row.Thickness, 'Customer', row.NoOfDwgs, row.TotalParts, row.MProcess]);
+          });
 
     // Folder creation
     const baseDir = path.join('C:', 'Magod', 'Jigani', 'Wo');
@@ -160,7 +192,8 @@ CombinedScheduleCreate.post('/createSchedule', jsonParser, async (req, res, next
       message: 'API executed successfully',
       cmbSchId,
       rowCont,
-      combinedScheduleNos
+      combinedScheduleNos,
+      Dwgdata
     });
 
   } catch (error) {
@@ -173,11 +206,12 @@ const insertIntoCombinedSchedule = async (custCode) => {
   const result = await mchQueryMod1(`INSERT INTO magodmis.combined_schedule (Cust_code) VALUES ('${custCode}')`, [custCode]);
   return result.insertId;
 };
+
 // Function to insert into combined_schedule_details
 const insertIntoCombinedScheduleDetails = async (cmbSchId, scheduleId, ordSchNo, cssrl) => {
   await mchQueryMod1(`
     INSERT INTO magodmis.combined_schedule_details (cmbSchId, ScheduleId, OrderSchNo, CSSrl)
-    VALUES ('${cmbSchId}', '${scheduleId}','${ordSchNo}','${cssrl}')`, [cmbSchId, scheduleId, ordSchNo, cssrl]);
+    VALUES ('${cmbSchId}', '${scheduleId}', '${ordSchNo}', '${cssrl}')`, [cmbSchId, scheduleId, ordSchNo, cssrl]);
 };
 
 // Function to get count of combined_schedule_details
@@ -185,20 +219,18 @@ const getCountOfCombinedScheduleDetails = async (cmbSchId) => {
   const result = await mchQueryMod1(`SELECT COUNT(*) AS rowCont FROM magodmis.combined_schedule_details WHERE cmbSchId = '${cmbSchId}'`, [cmbSchId]);
   return result[0].rowCont || 0;
 };
+
 // Function to update magodmis.orderschedule and magodmis.nc_task_list
 const updateOrderscheduleAndNCTaskList = async (scheduleStatus, scheduleId, cmbSchId, req) => {
   try {
-
     // Get Running_No from magod_setup.magod_runningno
     const runningNoResult = await mchQueryMod1(`
       SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='CombinedSchedule_JW'`);
 
     let runningNo = parseInt(runningNoResult[0].Running_No, 10);
-    // console.log(runningNo);
 
     // Increment Running_No by 1
     const updatedRunningNo = runningNo + 1;
-
 
     // Generate the current date in yyyy-mm-dd format
     const today = new Date().toISOString().split('T')[0];
@@ -206,9 +238,8 @@ const updateOrderscheduleAndNCTaskList = async (scheduleStatus, scheduleId, cmbS
     // Update magod_setup.magod_runningno with the updated Running_No
     await mchQueryMod1(`
       UPDATE magod_setup.magod_runningno
-      SET Running_No = '${updatedRunningNo}',Running_EffectiveDate='${today}'
+      SET Running_No = '${updatedRunningNo}', Running_EffectiveDate = '${today}'
       WHERE SrlType='CombinedSchedule_JW'`, [updatedRunningNo, today]);
-
 
     // Concatenate '99' with the updated Running_No
     const combinedScheduleNo = '99' + updatedRunningNo;
@@ -219,13 +250,6 @@ const updateOrderscheduleAndNCTaskList = async (scheduleStatus, scheduleId, cmbS
       SET o1.TStatus = 'Combined'
       WHERE o1.scheduleId = '${scheduleId}'`, [scheduleId]);
 
-    // // Update magodmis.orderschedule
-    // console.log("combinedScheduleNo",combinedScheduleNo + ' 01');
-    // await mchQueryMod1(`
-    //   UPDATE magodmis.orderschedule o
-    //   SET o.Schedule_Status = ''
-    //   WHERE o.OrdSchNo = '${combinedScheduleNo + ' 01'}'`, ['Comb/' + combinedScheduleNo, scheduleId]);
-
     return combinedScheduleNo;
   } catch (error) {
     throw error;
@@ -233,38 +257,35 @@ const updateOrderscheduleAndNCTaskList = async (scheduleStatus, scheduleId, cmbS
 };
 
 
+
+
 //Create Combined Schedule for Sales
 CombinedScheduleCreate.post('/createScheduleforSales', jsonParser, async (req, res, next) => {
+  console.log("req.body is", req.body);
   try {
     if (!req.body) {
       return res.status(400).json({ success: false, message: 'Request body is missing' });
     }
 
     const cmbSchId = await insertIntoCombinedSchedule1(req.body.custCode);
-
     const rowselectleftSales = req.body.rowselectleftSales;
     const insertPromises = rowselectleftSales.map((schedule, index) => {
       const { ScheduleID, ScheduleNo } = schedule;
       const rowCont = index + 1;
-
       return insertIntoCombinedScheduleDetails1(cmbSchId, ScheduleID, ScheduleNo, rowCont);
     });
 
     await Promise.all(insertPromises);
-
     const rowCont = await getCountOfCombinedScheduleDetails1(cmbSchId);
 
     // Update magodmis.orderschedule and magodmis.nc_task_list
     const updatePromises = rowselectleftSales.map((schedule) => {
       const { ScheduleID } = schedule;
       const scheduleStatus = 'Comb/' + cmbSchId;
-
-      // Pass req to the function here
       return updateOrderscheduleAndNCTaskList1(scheduleStatus, ScheduleID, cmbSchId, req);
     });
 
     const combinedScheduleNos = await Promise.all(updatePromises);
-
     const combinedScheduleNo = combinedScheduleNos[0]; // Assuming combinedScheduleNos is an array
     const insertResult = await mchQueryMod1(`
       INSERT INTO magodmis.orderschedule (Order_no, ScheduleNo, Cust_Code, ScheduleDate, schTgtDate, Delivery_date, SalesContact, Dealing_engineer, PO, ScheduleType, ordschno, Type, Schedule_Status)
@@ -284,7 +305,6 @@ CombinedScheduleCreate.post('/createScheduleforSales', jsonParser, async (req, r
     // Folder creation
     const baseDir = path.join('C:', 'Magod', 'Jigani', 'Wo');
     const combinedScheduleDir = path.join(baseDir, combinedScheduleNo);
-
     const subfolders = ['BOM', 'DespInfo', 'DXF', 'NestDXF', 'Parts', 'WO', 'WOL'];
 
     if (!fs.existsSync(combinedScheduleDir)) {
@@ -297,6 +317,17 @@ CombinedScheduleCreate.post('/createScheduleforSales', jsonParser, async (req, r
         fs.mkdirSync(subfolderPath, { recursive: true });
       }
     });
+
+    // New query to insert into magodmis.nc_task_list
+    const currentDateTime = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const totalNoOfDwgs = rowselectleftSales.reduce((sum, item) => sum + item.NoOfDwgs, 0);
+    const totalNoOfParts = rowselectleftSales.reduce((sum, item) => sum + item.TotalParts, 0);
+    const TaskNo= combinedScheduleNo + ' 01' + ' ' + '01';
+
+    await mchQueryMod1(`
+      INSERT INTO magodmis.nc_task_list (TaskNo, ScheduleID, DeliveryDate, order_No, ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation)
+      VALUES ('${TaskNo}', '${lastInsertId}', '${currentDateTime}', '${combinedScheduleNo}', '${combinedScheduleNo + ' 01'}', '0000', '${req.body.rowselectleftSales[0].Mtrl_Code}', '${req.body.rowselectleftSales[0].MTRL}', '${req.body.rowselectleftSales[0].Thickness}', 'Magod', '${totalNoOfDwgs}', '${totalNoOfParts}', '${req.body.rowselectleftSales[0].MProcess}', '${req.body.rowselectleftSales[0].Operation}')
+    `);
 
     res.status(200).json({
       success: true,
@@ -352,7 +383,7 @@ const updateOrderscheduleAndNCTaskList1 = async (scheduleStatus, ScheduleID, cmb
     await mchQueryMod1(`
       UPDATE magod_setup.magod_runningno
       SET Running_No = '${updatedRunningNo}',Running_EffectiveDate='${today}'
-      WHERE SrlType='CombinedSchedule_JW'`, [updatedRunningNo, today]);
+      WHERE Id='11'`, [updatedRunningNo, today]);
 
 
     // Concatenate '88' with the updated Running_No
@@ -377,19 +408,34 @@ const updateOrderscheduleAndNCTaskList1 = async (scheduleStatus, ScheduleID, cmb
 };
 
 
+
+
 //AFTER CREATE COMBINED SCHEDULE
 CombinedScheduleCreate.post('/afterCombineSchedule', jsonParser, async (req, res, next) => {
-  console.log("req.body is",req.body.combinedScheduleNo);
-  try {
-    mchQueryMod(`SELECT * FROM magodmis.orderschedule  WHERE Order_No= '${req.body.combinedScheduleNo}' and PO='Combined'`, (err, data) => {
-      if (err) logger.error(err);
-      //console.log(data)
-      res.send(data)
-    })
-  } catch (error) {
-    next(error)
+  if (req.body.type === 'JobWork') {
+    try {
+      mchQueryMod(`SELECT * FROM magodmis.orderschedule  WHERE Order_No= '${req.body.combinedScheduleNo}' and PO='Combined'`, (err, data) => {
+        if (err) logger.error(err);
+        //console.log(data)
+        res.send(data)
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+  else {
+    try {
+      mchQueryMod(`SELECT * FROM magodmis.orderschedule  WHERE Order_No= '${req.body.combinedScheduleNo}'`, (err, data) => {
+        if (err) logger.error(err);
+        //console.log(data)
+        res.send(data)
+      })
+    } catch (error) {
+      next(error)
+    }
   }
 });
+
 
 //get sales Data
 
