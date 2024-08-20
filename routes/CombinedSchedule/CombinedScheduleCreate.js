@@ -73,13 +73,14 @@ CombinedScheduleCreate.post('/prepareSchedule', jsonParser, async (req, res, nex
 
 
 CombinedScheduleCreate.post('/prepareScheduleSales', jsonParser, async (req, res, next) => {
+  console.log("req.body is",req.body);
   try {
     mchQueryMod(`SELECT n.NcTaskId, n.TaskNo, o.SchDetailsID, o.ScheduleId, 
     o.Cust_Code, o.DwgName, o.Mtrl_Code,
     o.MProcess, o.Mtrl_Source, o.InspLevel, o.QtyScheduled as QtyToNest,
      o.DwgStatus, o.Operation, o.Tolerance
     FROM magodmis.orderscheduledetails o,magodmis.nc_task_list n 
-    WHERE  o.NcTaskId=n.NcTaskId AND n.NcTaskId='${req.body.NcTaskId}';
+    WHERE  o.NcTaskId=n.NcTaskId AND n.ScheduleId='${req.body.ScheduleId}';
         `, (err, data) => {
       if (err) logger.error(err);
       //console.log(data)
