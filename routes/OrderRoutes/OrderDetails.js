@@ -166,7 +166,8 @@ OrderDetailsRouter.post(`/getfindoldpartdata`, async (req, res, next) => {
 	////console.log("req", req.body);
 	try {
 		misQueryMod(
-			`SELECT * FROM magodmis.order_details WHERE cust_code=${req.body.custcode}`,
+			// `SELECT * FROM magodmis.order_details WHERE cust_code=${req.body.custcode}`,
+			`SELECT * FROM magodmis.orderscheduledetails WHERE cust_code=${req.body.custcode}`,
 			(err, findoldpartdata) => {
 				if (err) {
 					////console.log("error", err);
@@ -396,7 +397,7 @@ OrderDetailsRouter.post(`/LoadArrival`, async (req, res, next) => {
 });
 
 OrderDetailsRouter.post(`/LoadArrival2`, async (req, res, next) => {
-	// //console.log("reqqqqqqqq", req.body);
+	console.log("reqqqqqqqq", req.body);
 	try {
 		misQueryMod(
 			`SELECT m.rvID, m.Mtrl_Code, m.DynamicPara1, m.DynamicPara2, m.Qty, m.updated 
@@ -406,7 +407,7 @@ OrderDetailsRouter.post(`/LoadArrival2`, async (req, res, next) => {
 					//console.log("error", err);
 					res.status(500).send("Internal Server Error");
 				} else {
-					// //console.log("data1", data1);
+					console.log("data1", data1);
 					res.send(data1);
 				}
 			}
