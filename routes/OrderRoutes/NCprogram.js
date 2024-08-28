@@ -9,6 +9,7 @@ const {
 } = require("../../helpers/dbconn");
 
 NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
+    console.log("Req.body of get formdata ncprogram is",req.body);
     let query = `SELECT n.*,t.DwgName as AssyName FROM magodmis.nc_task_list n,magodmis.task_partslist t 
     WHERE n.NcTaskId='${req.body.rowselectTaskMaterial.NcTaskId}' AND t.NcTaskId=n.NcTaskId`;
     try {
@@ -102,7 +103,6 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
                                         } else if (!taskPartsData || taskPartsData.length === 0) {
                                             return res.status(400).json({ message: "No task parts data found for the provided NcTaskId" });
                                         } else {
-                                            // console.log("Task parts data:", taskPartsData[0]);
 
                                             // Insert into ncprograms table
                                             const insertNCProgramQuery = `INSERT INTO magodmis.ncprograms(
@@ -120,12 +120,20 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
                                                     // console.log("NC Program inserted successfully:", ncProgramResult);
                                                     const lastInsertId = ncProgramResult.insertId;
 
+                                                    console.log("Task  data:", taskPartsData[0]);
+
+
+                                                    console.log("Task taskPartsData[0].QtyToNest data:", taskPartsData[0].QtyNested);
+
+
                                                     // Insert into ncprogram_partslist
                                                     const insertPartsListQuery = `INSERT INTO magodmis.ncprogram_partslist(
                                                         NcProgramNo, TaskNo, DwgName, PartID, QtyNested, Sheets, TotQtyNested, Task_Part_Id, NCId, HasBOM
                                                     ) VALUES(
-                                                        '${nextNCProgramNo}', '${TaskNo}', '${req.body.NCprogramForm[0].AssyName}', '1', '${taskPartsData[0].QtyNested}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}'
+                                                        '${nextNCProgramNo}', '${TaskNo}', '${req.body.NCprogramForm[0].AssyName}', '1', '1', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}'
                                                     )`;
+
+                                                    console.log("insertPartsListQuery is",insertPartsListQuery);
 
                                                     misQueryMod(insertPartsListQuery, (partsListErr, partsListResult) => {
                                                         if (partsListErr) {
