@@ -154,7 +154,7 @@ ORDER BY UniqueData.UniqueColumn DESC`,
 				if (err) {
 					logger.error(err);
 				} else {
-					// ////console.log("bomdata...", bomdata);
+					console.log("bomdata...", bomdata);
 					res.send(bomdata);
 				}
 			}
