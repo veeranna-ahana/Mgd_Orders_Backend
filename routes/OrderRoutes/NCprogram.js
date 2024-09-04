@@ -9,6 +9,7 @@ const {
 } = require("../../helpers/dbconn");
 
 NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
+    console.log("Req.body of get formdata ncprogram is",req.body);
     let query = `SELECT n.*,t.DwgName as AssyName FROM magodmis.nc_task_list n,magodmis.task_partslist t 
     WHERE n.NcTaskId='${req.body.rowselectTaskMaterial.NcTaskId}' AND t.NcTaskId=n.NcTaskId`;
     try {
@@ -17,7 +18,7 @@ NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
                 console.log("err", err);
             } else {
                 res.send(data);
-                  console.log("data",data)
+                //   console.log("data",data)
             }
         });
     } catch (error) {
@@ -54,7 +55,6 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
         }
 
         const { NcTaskId, TaskNo } = NCprogramForm[0];
-        console.log("NcTaskId is",NcTaskId);
 
 
         // Check if Quantity Tasked has already been programmed
@@ -103,7 +103,6 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
                                         } else if (!taskPartsData || taskPartsData.length === 0) {
                                             return res.status(400).json({ message: "No task parts data found for the provided NcTaskId" });
                                         } else {
-                                            // console.log("Task parts data:", taskPartsData[0]);
 
                                             // Insert into ncprograms table
                                             const insertNCProgramQuery = `INSERT INTO magodmis.ncprograms(
@@ -121,12 +120,20 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
                                                     // console.log("NC Program inserted successfully:", ncProgramResult);
                                                     const lastInsertId = ncProgramResult.insertId;
 
+                                                    console.log("Task  data:", taskPartsData[0]);
+
+
+                                                    console.log("Task taskPartsData[0].QtyToNest data:", taskPartsData[0].QtyNested);
+
+
                                                     // Insert into ncprogram_partslist
                                                     const insertPartsListQuery = `INSERT INTO magodmis.ncprogram_partslist(
                                                         NcProgramNo, TaskNo, DwgName, PartID, QtyNested, Sheets, TotQtyNested, Task_Part_Id, NCId, HasBOM
                                                     ) VALUES(
-                                                        '${nextNCProgramNo}', '${TaskNo}', '${req.body.NCprogramForm[0].AssyName}', '1', '${taskPartsData[0].QtyNested}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}'
+                                                        '${nextNCProgramNo}', '${TaskNo}', '${req.body.NCprogramForm[0].AssyName}', '1', '1', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}'
                                                     )`;
+
+                                                    console.log("insertPartsListQuery is",insertPartsListQuery);
 
                                                     misQueryMod(insertPartsListQuery, (partsListErr, partsListResult) => {
                                                         if (partsListErr) {
@@ -193,7 +200,6 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
 NCprogramRoter.post(`/getPrograms`, async (req, res, next) => {
     // console.log(req.body);
     const { NcTaskId } = req.body.NCprogramForm[0] || []; // Assuming NcTaskId is sent in the request body
-    console.log("NcTaskId is",NcTaskId);
     let query = `select * from magodmis.ncprograms where  NcTaskId='${NcTaskId}'`;
     try {
         misQueryMod(query, (err, data) => {
@@ -265,9 +271,20 @@ NCprogramRoter.post(`/ButtonSave`, async (req, res, next) => {
 });
 
 //getNCProram Parts Data
-NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
-    console.log("req.body.NCprogramForm[0].NcTaskId is",req.body.NCprogramForm[0].NcTaskId);
-    let queryCheckBOM = `SELECT t.HasBOM FROM magodmis.task_partslist t WHERE t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}'`;
+NCprogramRoter.post(`/NCProgramPartsData`, async (req, res, next) => {
+    // Log the request body to verify the incoming data
+
+    // Check if NCprogramForm is present and has at least one element
+    if (!req.body.NCprogramForm || req.body.NCprogramForm.length === 0) {
+        return res.status(400).send("Invalid request body format");
+    }
+
+    const NcTaskId = req.body.NCprogramForm[0].NcTaskId;
+
+
+  
+    let queryCheckBOM = `SELECT t.HasBOM FROM magodmis.task_partslist t WHERE t.NcTaskId = '${NcTaskId}'`;
+  
   
     try {
       misQueryMod(queryCheckBOM, (err, bomData) => {
@@ -277,36 +294,43 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
         }
   
         if (bomData && bomData.length > 0 && bomData[0].HasBOM === 1) {
-          // Execute query when HasBOM is 1 (true)
+          // Query when HasBOM is 1 (true)
           let query = `SELECT c2.PartId, c1.Quantity as QtyPerAssy, c2.Id As CustBOM_Id, t.Task_Part_ID, t.QtyNested * c1.Quantity as QtyRequired 
                        FROM magodmis.task_partslist t, magodmis.orderscheduledetails o, magodmis.cust_assy_data c,
                             magodmis.cust_assy_bom_list c1, magodmis.cust_bomlist c2 
-                       WHERE t.NcTaskId='${req.body.NCprogramForm[0].NcTaskId}' AND t.HasBOM AND t.SchDetailsId=o.SchDetailsID
+                       WHERE t.NcTaskId='${NcTaskId}' AND t.HasBOM AND t.SchDetailsId=o.SchDetailsID
                        AND c.MagodCode = o.Dwg_Code AND c1.Cust_AssyId=c.Id AND c1.Cust_BOM_ListId=c2.Id`;
+  
   
           misQueryMod(query, (err, data) => {
             if (err) {
               console.log("Error executing query:", err);
               return next(err);
             }
-            
+
+  
             // Extracting CustBOM_Id from the result
             const custBOMIds = data.map(entry => entry.CustBOM_Id).join("','");
+
+        
   
             // Additional query to calculate quantity available
             let additionalQuery = `SELECT SUM(CAST(m.QtyAccepted - m.QtyIssued AS SIGNED)) AS QtyAvailable 
                                    FROM magodmis.mtrl_part_receipt_details m 
                                    WHERE m.CustBOM_Id IN ('${custBOMIds}')`;
   
+  
             misQueryMod(additionalQuery, (err, additionalData) => {
               if (err) {
                 console.log("Error executing additional query:", err);
                 return next(err);
               }
+  
+
               // Combining data from both queries
               const responseData = {
                 partsData: data,
-                availableQty: additionalData[0].QtyAvailable
+                availableQty: additionalData[0]?.QtyAvailable || 0
               };
               res.send(responseData);
             });
@@ -315,14 +339,16 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
           // Handle case when HasBOM is not 1 (false)
           let query = `SELECT o.DwgName as PartID, 1 as QtyPerAssy, c.Id as CustBOM_Id, t.Task_Part_ID, t.QtyToNest as QtyRequired 
                        FROM magodmis.task_partslist t, magodmis.orderscheduledetails o, magodmis.cust_bomlist c 
-                       WHERE o.SchDetailsID = t.SchDetailsId AND t.NcTaskId = '${req.body.NCprogramForm[0].NcTaskId}' AND c.MagodPartId = o.Dwg_Code`;
+                       WHERE o.SchDetailsID = t.SchDetailsId AND t.NcTaskId = '${NcTaskId}' AND c.MagodPartId = o.Dwg_Code`;
+  
   
           misQueryMod(query, (err, data) => {
             if (err) {
               console.log("Error executing query:", err);
               return next(err);
             }
-            
+  
+  
             // Extracting CustBOM_Id from the result
             const custBOMIds = data.map(entry => entry.CustBOM_Id).join("','");
   
@@ -331,15 +357,19 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
                                    FROM magodmis.mtrl_part_receipt_details m 
                                    WHERE m.CustBOM_Id IN ('${custBOMIds}')`;
   
+         
+  
             misQueryMod(additionalQuery, (err, additionalData) => {
               if (err) {
                 console.log("Error executing additional query:", err);
                 return next(err);
               }
+  
+  
               // Combining data from both queries
               const responseData = {
                 partsData: data,
-                availableQty: additionalData[0].QtyAvailable
+                availableQty: additionalData[0]?.QtyAvailable || 0
               };
               res.send(responseData);
             });
@@ -347,10 +377,13 @@ NCprogramRoter.get(`/NCProgramPartsData`, async (req, res, next) => {
         }
       });
     } catch (error) {
-      console.log("Error:", error);
+      console.log("Caught error:", error);
       next(error);
     }
   });
+  
+  
+  
 
 
 

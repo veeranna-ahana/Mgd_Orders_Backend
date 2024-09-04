@@ -3,8 +3,10 @@ const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 
 //Create Schedule
 ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, next) => {
+  // console.log("selectedItem is",req.body.selectedItems)
   const scheduleType = req.body.scheduleType === "Sales" ? "Magod" : "Customer";
   const count = req.body.selectedItems.length; // Assuming selectedItems is an array of items to be scheduled
+
 
 
   let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
@@ -40,7 +42,7 @@ ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, n
                   Schedule_Srl, Cust_Code, Dwg_Code, DwgName, Mtrl_Code, Operation, MProcess,
                   Mtrl_Source, PackingLevel, InspLevel, QtyScheduled, Tolerance, JWCost, MtrlCost, HasBOM)
                   VALUES('${scheduleId}', '${selectedItem.OrderDetailId}','${selectedItem.Order_No}',
-                  '${selectedItem.Order_Srl}','${selectedItem.Cust_Code}','${selectedItem.Dwg}', '${selectedItem.DwgName}', '${selectedItem.Mtrl_Code}', '${selectedItem.Operation}','${selectedItem.MProcess}',
+                  '${selectedItem.Order_Srl}','${selectedItem.Cust_Code}','${selectedItem.Dwg_Code}', '${selectedItem.DwgName}', '${selectedItem.Mtrl_Code}', '${selectedItem.Operation}','${selectedItem.MProcess}',
                   '${scheduleType}','${selectedItem.PackingLevel}', '${selectedItem.InspLevel}','${QtyToSchedule}','${selectedItem.tolerance}','${selectedItem.JWCost}','${selectedItem.MtrlCost}','${selectedItem.HasBOM}')`;
               misQuery(inserquery2, (err2, finalresponse) => {
                 if (err2) {
