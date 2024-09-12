@@ -61,6 +61,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
 		const BillingState = req.body.BillingState;
 		const MagodDelivery = req.body.MagodDelivery;
 		const shippingAddress = req.body.shippingAddress;
+		console.log("req.body.shippingAddress", req.body.shippingAddress);
 		const GSTTaxState = req.body.GSTTaxState;
 		const Transportcharges = req.body.Transportcharges;
 		const billingstateId = "00";

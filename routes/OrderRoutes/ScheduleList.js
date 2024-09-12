@@ -753,10 +753,6 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 
 																															// Generate the task number with the format "neworderSch taskNumber"
 																															row.TaskNo = `${neworderSch} ${taskCounters[key]}`;
-																															console.log(
-																																"Generated TaskNo is:",
-																																row.TaskNo
-																															);
 																														}
 																													);
 
@@ -842,11 +838,15 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 																																		`Updated TaskNo and NcTaskId for SchDetailsID ${row.SchDetailsID}`
 																																	);
 																																} else {
+																																	console.log(
+																																		"neworderSch is",
+																																		neworderSch
+																																	);
 																																	// If no record exists, insert a new one into nc_task_list
 																																	let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
                                                                                           ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation)
                                                                                           VALUES('${row.TaskNo}', '${row.ScheduleId}', '${formattedDate}',
-                                                                                          '${req.body.formdata[0].OrdSchNo}', ${nextSRL},
+                                                                                          '${req.body.formdata[0].OrdSchNo}', '${neworderSch}',
                                                                                           '${req.body.formdata[0].Cust_Code}', '${row.Mtrl_Code}',
                                                                                           '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '1',
                                                                                           '${row.QtyScheduled}', '${MProcess}', '${row.Operation}')`;
@@ -1098,9 +1098,7 @@ ScheduleListRouter.post(`/scheduleAfterLogin`, async (req, res, next) => {
 																	);
 
 																	if (processIdData.length === 0) {
-																		console.log(
-																			`No ProcessID found for Operation ${row.Operation}`
-																		);
+																		// console.log(`No ProcessID found for Operation ${row.Operation}`);
 																		throw new Error(
 																			`No ProcessID found for Operation ${row.Operation}`
 																		);
@@ -1118,38 +1116,42 @@ ScheduleListRouter.post(`/scheduleAfterLogin`, async (req, res, next) => {
 																		// If the record exists, use the existing NcTaskId for the update
 																		const NcTaskId = results[0].NcTaskId;
 
-																		let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails
+																		let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails 
                                                            SET TaskNo='${row.TaskNo}', NcTaskId='${NcTaskId}'
                                                            WHERE SchDetailsID='${row.SchDetailsID}'`;
 
 																		await queryDatabase(updateTaskNoQuery);
-																		console.log(
-																			`Updated TaskNo and NcTaskId for SchDetailsID ${row.SchDetailsID}`
-																		);
+																		// console.log(`Updated TaskNo and NcTaskId for SchDetailsID ${row.SchDetailsID}`);
 																	} else {
 																		// If no record exists, insert a new one into nc_task_list
+																		console.log("neworderSch is", neworderSch);
 																		let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
-                                                            ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation)
+                                                            ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
                                                             VALUES('${row.TaskNo}', '${row.ScheduleId}', '${formattedDate}',
-                                                            '${req.body.formdata[0].OrdSchNo}', ${nextSRL},
+                                                            '${req.body.formdata[0].OrdSchNo}', '${neworderSch}', 
                                                             '${req.body.formdata[0].Cust_Code}', '${row.Mtrl_Code}',
                                                             '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '1',
                                                             '${row.QtyScheduled}', '${MProcess}', '${row.Operation}')`;
+
+																		console.log(
+																			"insertNcTaskListQuery is",
+																			insertNcTaskListQuery
+																		);
 
 																		const insertResult = await queryDatabase(
 																			insertNcTaskListQuery
 																		);
 																		const NcTaskId = insertResult.insertId;
 
-																		let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails
+																		let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails 
                                                            SET TaskNo='${row.TaskNo}', NcTaskId='${NcTaskId}'
                                                            WHERE SchDetailsID='${row.SchDetailsID}'`;
 
 																		await queryDatabase(updateTaskNoQuery);
 
 																		// Insert into task_partslist table using the newly inserted NcTaskId
-																		let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl,
-                                                                  OrdSch, HasBOM)
+																		let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl, 
+                                                                  OrdSch, HasBOM) 
                                                                   SELECT '${NcTaskId}', '${row.TaskNo}', o.SchDetailsID, o.DwgName, o.QtyScheduled, o.Schedule_Srl,
                                                                   '${neworderSch}', o.HasBOM
                                                                   FROM magodmis.orderscheduledetails o WHERE o.NcTaskId='${NcTaskId}'`;
