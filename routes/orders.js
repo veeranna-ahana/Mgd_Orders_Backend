@@ -101,7 +101,7 @@ ordersRouter.post(`/savecreateorder`, async (req, res, next) => {
             ordervalue, materialvalue, billing_address, BillingStateId, delivery, del_place, DelStateId, del_mode,
             tptcharges, order_type, register, qtnno) VALUES ('${ordno}', '${orddate}', '${ccode}', '${CustomerContact}', '${ordertype}', '${deliverydate}', '${purchaseorder}',
             '${receivedby}', '${salesContact}', '${RecordedBy}', '${DealingEngineer}', 'Created', '${SpecialInstructions}', '${paymentterms}',
-            '${0}', '${0}', '${billingAddress}', '${billingstateId}', ${MagodDelivery}, '${GSTTaxState}', '${DelStateId}', '${DeliveryMode}',
+            '${0}', '${0}', '${billingAddress}', '${billingstateId}', ${MagodDelivery}, '${shippingAddress}', '${DelStateId}', '${DeliveryMode}',
             '${Transportcharges}', '${type}', '${0}', '${qtnno}')`,
 					(err, insertResult) => {
 						if (err) logger.error(err);
