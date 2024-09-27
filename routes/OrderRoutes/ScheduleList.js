@@ -812,9 +812,9 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                                                                          WHERE SchDetailsID='${row.SchDetailsID}'`;
                                                           
                                                                 await queryDatabase(updateTaskNoQuery);
-                                                                console.log(`Updated TaskNo and NcTaskId for SchDetailsID ${row.SchDetailsID}`);
+                                                                // console.log(`Updated TaskNo and NcTaskId for SchDetailsID ${row.SchDetailsID}`);
                                                               } else {
-                                                                console.log("neworderSch is",neworderSch);
+                                                                // console.log("neworderSch is",neworderSch);
                                                                 // If no record exists, insert a new one into nc_task_list
                                                                 let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
                                                                                           ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
