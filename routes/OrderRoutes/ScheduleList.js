@@ -130,25 +130,25 @@ ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
 
 //Button Save
 ScheduleListRouter.post(`/save`, async (req, res, next) => {
-  // Constructing the query to update orderscheduledetails table
+  // Constructing the first query to update orderscheduledetails table
   let query = `UPDATE magodmis.orderscheduledetails o,
-    (SELECT  CASE
-    WHEN o.QtyScheduled=0  THEN 'Cancelled'
-    WHEN o.QtyDelivered>=o.QtyScheduled THEN 'Dispatched'
-    WHEN o.QtyPacked>=o.QtyScheduled THEN 'Ready'
-    WHEN o.QtyCleared>=o.QtyScheduled THEN IF(o1.ScheduleType='Combined' , 'Closed' , 'Inspected')
-    WHEN o.QtyProduced-o.QtyRejected>=o.QtyScheduled THEN 'Completed'
-    WHEN o.QtyProgrammed>=o.QtyScheduled THEN 'Programmed'
-    WHEN o.QtyProgrammed>0 THEN 'Production'
-    WHEN o.QtyScheduled> 0 THEN 'Tasked'                 
+    (SELECT CASE
+    WHEN o.QtyScheduled = 0 THEN 'Cancelled'
+    WHEN o.QtyDelivered >= o.QtyScheduled THEN 'Dispatched'
+    WHEN o.QtyPacked >= o.QtyScheduled THEN 'Ready'
+    WHEN o.QtyCleared >= o.QtyScheduled THEN IF(o1.ScheduleType = 'Combined', 'Closed', 'Inspected')
+    WHEN o.QtyProduced - o.QtyRejected >= o.QtyScheduled THEN 'Completed'
+    WHEN o.QtyProgrammed >= o.QtyScheduled THEN 'Programmed'
+    WHEN o.QtyProgrammed > 0 THEN 'Production'
+    WHEN o.QtyScheduled > 0 THEN 'Tasked'                 
     ELSE 'Created' END AS STATUS, o.SchDetailsID
-    FROM magodmis.orderscheduledetails o,magodmis.orderschedule o1
-    WHERE o1.ScheduleId=o.ScheduleId 
-    AND o1.ScheduleId='${req.body.formdata[0].ScheduleId}' ) A
-    SET o.Schedule_Status=a.Status
-    WHERE a.SchDetailsID= o.SchDetailsID`;
+    FROM magodmis.orderscheduledetails o, magodmis.orderschedule o1
+    WHERE o1.ScheduleId = o.ScheduleId 
+    AND o1.ScheduleId = '${req.body.formdata[0].ScheduleId}' ) A
+    SET o.Schedule_Status = A.Status
+    WHERE A.SchDetailsID = o.SchDetailsID`;
 
-  // Constructing the query to update orderschedule table
+  // Constructing the second query to update orderschedule table
   let updateOrderScheduleQuery = `UPDATE magodmis.orderschedule 
                                     SET Special_Instructions='${req.body.SpclInstruction}',
                                         Delivery_Date='${req.body.deliveryDate}',
@@ -159,15 +159,42 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
     // Executing the first query
     misQueryMod(query, (err, data) => {
       if (err) {
-        console.log("err", err);
+        console.log("Error in orderscheduledetails update:", err);
+        return res.status(500).send(err);
       } else {
         // Executing the second query inside the callback of the first query
-        misQueryMod(updateOrderScheduleQuery, (updateErr, updateData) => {
+        misQueryMod(updateOrderScheduleQuery, async (updateErr, updateData) => {
           if (updateErr) {
             console.log("Error updating orderschedule:", updateErr);
+            return res.status(500).send(updateErr);
           } else {
-            // Sending response after both queries are executed
-            res.send(updateData);
+            // Looping through newState and executing the update query for each array item
+            try {
+              const updateDetailsPromises = req.body.newState.map((item) => {
+                const updateDetailQuery = `UPDATE magodmis.orderscheduledetails 
+                                           SET JWCost = '${item.JWCost}', MtrlCost = '${item.MtrlCost}'
+                                           WHERE SchDetailsID = '${item.SchDetailsID}'`;
+                return new Promise((resolve, reject) => {
+                  misQueryMod(updateDetailQuery, (err, result) => {
+                    if (err) {
+                      console.log(`Error updating SchDetailsID ${item.SchDetailsID}:`, err);
+                      reject(err);
+                    } else {
+                      resolve(result);
+                    }
+                  });
+                });
+              });
+
+              // Wait for all update queries for newState to complete
+              await Promise.all(updateDetailsPromises);
+
+              // Sending response after all queries are executed successfully
+              res.send(updateData);
+            } catch (error) {
+              console.log("Error updating orderscheduledetails:", error);
+              next(error);
+            }
           }
         });
       }
@@ -176,6 +203,8 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
     next(error);
   }
 });
+
+
 
 //Onclick of Suspend
 ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
@@ -1121,7 +1150,6 @@ ScheduleListRouter.get(`/getSalesContact`, async (req, res, next) => {
 
 //OnClick of Performance
 ScheduleListRouter.post(`/onClickPerformce`, async (req, res, next) => {
-  console.log("req.body is", req.body);
   try {
     const scheduleId = req.body.formdata[0].ScheduleId;
 
