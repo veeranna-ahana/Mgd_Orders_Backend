@@ -9,7 +9,6 @@ const {
 } = require("../../helpers/dbconn");
 
 NCprogramRoter.post(`/getFormData`, async (req, res, next) => {
-    console.log("Req.body of get formdata ncprogram is",req.body);
     let query = `SELECT n.*,t.DwgName as AssyName FROM magodmis.nc_task_list n,magodmis.task_partslist t 
     WHERE n.NcTaskId='${req.body.rowselectTaskMaterial.NcTaskId}' AND t.NcTaskId=n.NcTaskId`;
     try {

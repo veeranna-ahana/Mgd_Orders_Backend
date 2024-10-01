@@ -4,9 +4,10 @@ const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 //Create Schedule
 ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, next) => {
   // console.log("selectedItem is",req.body.selectedItems)
-  const scheduleType = req.body.scheduleType === "Sales" ? "Magod" : "Customer";
   const count = req.body.selectedItems.length; // Assuming selectedItems is an array of items to be scheduled
 
+
+  const scheduleType = req.body.OrderData.Type === 'Service' ? req.body.OrderData.Type : req.body.scheduleType;
 
 
   let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 

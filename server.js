@@ -7,20 +7,20 @@ const cors = require("cors");
 
 const app = express();
 const {
-	misQuery,
-	setupQuery,
-	qtnQuery,
-	misQueryMod,
-	qtnQueryMod,
-	qtnQueryModv2,
-	slsQueryMod,
-	mchQueryMod,
-	mtrlQueryMod,
-	setupQueryMod,
+  misQuery,
+  setupQuery,
+  qtnQuery,
+  misQueryMod,
+  qtnQueryMod,
+  qtnQueryModv2,
+  slsQueryMod,
+  mchQueryMod,
+  mtrlQueryMod,
+  setupQueryMod,
 } = require("./helpers/dbconn");
 
 setupQuery("SELECT 1", (res) => {
-	console.log("Connected to MySQL successfully. ");
+  console.log("Connected to MySQL successfully. ");
 });
 app.use(cors());
 const userRouter = require("./routes/user");
@@ -111,6 +111,8 @@ const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
 const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
 const ProfarmaInvFormRouter = require("./routes/OrderRoutes/ProfarmaInvForm");
 const PackingNoteAndInvoiceRouter = require("./routes/OrderRoutes/PackingNoteAndInvoice");
+const PDFRouter = require("./routes/OrderRoutes/PDF");
+
 // const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
 // const NCprogramRoter=require("./routes/OrderRoutes/NCprogram");
 // running no
@@ -126,23 +128,24 @@ app.use("/productionSchCreation", ProductionSchCreationRouter);
 app.use("/profarmaInvList", ProfarmaInvListRouter);
 // app.use("/scheduleList", ScheduleListRouter);
 app.use("/orderPackingNoteAndInvoice", PackingNoteAndInvoiceRouter);
+app.use("/pdf", PDFRouter);
 app.use("/profarmaInvForm", ProfarmaInvFormRouter);
 
 // app.use(fileUpload());
 
 app.use((err, req, res, next) => {
-	res.status(err.status || 500);
-	res.send({
-		error: {
-			status: err.status || 500,
-			message: err.message,
-		},
-	});
-	logger.error(`Status Code : ${err.status}  - Error : ${err.message}`);
+  res.status(err.status || 500);
+  res.send({
+    error: {
+      status: err.status || 500,
+      message: err.message,
+    },
+  });
+  logger.error(`Status Code : ${err.status}  - Error : ${err.message}`);
 });
 
 // starting the server
 app.listen(process.env.PORT, () => {
-	console.log("Server running on port", process.env.PORT);
-	// logger.info("listening on port", process.env.PORT);
+  console.log("Server running on port", process.env.PORT);
+  // logger.info("listening on port", process.env.PORT);
 });

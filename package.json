@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "starttest": "nodemon server.js",
+    "start": "nodemon server.js",
     "build": "pkg server.js --compress Brotli --output ./dist/Backend --targets win --public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
