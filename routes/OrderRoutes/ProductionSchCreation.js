@@ -4,14 +4,15 @@ const { misQuery, setupQuery, misQueryMod } = require("../../helpers/dbconn");
 //Create Schedule
 ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, next) => {
   // console.log("selectedItem is",req.body.selectedItems)
-  // const scheduleType = req.body.scheduleType === "Sales" ? "Magod" : "Customer";
   const count = req.body.selectedItems.length; // Assuming selectedItems is an array of items to be scheduled
 
+
+  const scheduleType = req.body.OrderData.Type === 'Service' ? req.body.OrderData.Type : req.body.scheduleType;
 
 
   let insertquery1 = `INSERT INTO magodmis.orderschedule(Order_No, PO, Cust_Code, ScheduleDate, Delivery_date, 
                 SalesContact, Dealing_Engineer, ScheduleType, Type, Internal, Schedule_Status,schTgtDate) 
-                VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),adddate(curdate(), INTERVAL 2 DAY), '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${req.body.scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
+                VALUES ('${req.body.OrderData.Order_No}','${req.body.OrderData.Purchase_Order}','${req.body.OrderData.Cust_Code}',now(),adddate(curdate(), INTERVAL 2 DAY), '${req.body.OrderData.SalesContact}', '${req.body.OrderData.Dealing_Engineer}','${scheduleType}','${req.body.OrderData.Type}','0','Created',now())`;
 
   misQuery(insertquery1, (result, err1) => {
     if (err1) {
@@ -43,7 +44,7 @@ ProductionSchCreationRouter.post(`/createProductionSchedule`, async (req, res, n
                   Mtrl_Source, PackingLevel, InspLevel, QtyScheduled, Tolerance, JWCost, MtrlCost, HasBOM)
                   VALUES('${scheduleId}', '${selectedItem.OrderDetailId}','${selectedItem.Order_No}',
                   '${selectedItem.Order_Srl}','${selectedItem.Cust_Code}','${selectedItem.Dwg_Code}', '${selectedItem.DwgName}', '${selectedItem.Mtrl_Code}', '${selectedItem.Operation}','${selectedItem.MProcess}',
-                  '${req.body.scheduleType}','${selectedItem.PackingLevel}', '${selectedItem.InspLevel}','${QtyToSchedule}','${selectedItem.tolerance}','${selectedItem.JWCost}','${selectedItem.MtrlCost}','${selectedItem.HasBOM}')`;
+                  '${scheduleType}','${selectedItem.PackingLevel}', '${selectedItem.InspLevel}','${QtyToSchedule}','${selectedItem.tolerance}','${selectedItem.JWCost}','${selectedItem.MtrlCost}','${selectedItem.HasBOM}')`;
               misQuery(inserquery2, (err2, finalresponse) => {
                 if (err2) {
                   // console.log("Error inserting into orderscheduledetails:", err2);
