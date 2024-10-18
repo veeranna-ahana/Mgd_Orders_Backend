@@ -75,9 +75,15 @@ var jsonParser = bodyParser.json();
 // veeranna
 
 userRouter.post(`/login`, async (req, res, next) => {
+<<<<<<< HEAD
+  try {
+    const username = req.body.username;
+    const passwd = req.body.password;
+=======
 	try {
 		const username = req.body.username;
 		const passwd = req.body.password;
+>>>>>>> 3bf09123b536b928a6acc0e4473ad8f5239983f4
 
 		let passwrd = CryptoJS.SHA512(req.body.password);
 		console.log(passwrd);

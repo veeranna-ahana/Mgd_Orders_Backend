@@ -209,6 +209,30 @@ let mchQueryMod = (m, callback) => {
 	});
 };
 
+<<<<<<< HEAD
+
+let mchQueryMod1 = async (m) => {
+  try {
+      const [rows, fields] = await mchConn.promise().query(m);
+      return rows;
+  } catch (error) {
+      throw error;
+  }
+};
+
+module.exports = {
+  misQuery,
+  setupQuery,
+  qtnQuery,
+  misQueryMod,
+  qtnQueryMod,
+  qtnQueryModv2,
+  slsQueryMod,
+  mchQueryMod,
+  mtrlQueryMod,
+  setupQueryMod,
+  mchQueryMod1
+=======
 // let mchQueryMod1 = async (m) => {
 // 	try {
 // 		const [rows, fields] = await mchConn.promise().query(m);
@@ -230,4 +254,5 @@ module.exports = {
 	mtrlQueryMod,
 	setupQueryMod,
 	mchQueryMod1,
+>>>>>>> 3bf09123b536b928a6acc0e4473ad8f5239983f4
 };

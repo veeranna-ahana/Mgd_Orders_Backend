@@ -132,7 +132,6 @@ NCprogramRoter.post('/addProgram', async (req, res, next) => {
                                                         '${nextNCProgramNo}', '${TaskNo}', '${req.body.NCprogramForm[0].AssyName}', '1', '1', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].QtyToNest}', '${taskPartsData[0].Task_Part_ID}', '${lastInsertId}', '${taskPartsData[0].HasBOM}'
                                                     )`;
 
-                                                    console.log("insertPartsListQuery is",insertPartsListQuery);
 
                                                     misQueryMod(insertPartsListQuery, (partsListErr, partsListResult) => {
                                                         if (partsListErr) {
