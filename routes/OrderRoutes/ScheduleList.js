@@ -751,8 +751,6 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                                         const taskCounters = {};
                                                         let taskNumber = 1;
                                                     
-                                                        // Modify the grouping logic based on req.body.Type
-
                                                         const groupedTasks = req.body.Type === 'Profile'
                                                         ? scheduleDetails.reduce((acc, row) => {
                                                             // Create a key for grouping based on Mtrl_Code, MProcess, and Operation
