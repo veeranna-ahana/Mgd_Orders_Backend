@@ -74,7 +74,6 @@ var jsonParser = bodyParser.json();
 
 userRouter.post(`/login`, async (req, res, next) => {
   try {
-    console.log("login");
     const username = req.body.username;
     const passwd = req.body.password;
 

@@ -6,7 +6,23 @@ const cors = require("cors");
 // const fileUpload = require('express-fileupload');
 
 const app = express();
+const {
+	misQuery,
+	setupQuery,
+	qtnQuery,
+	misQueryMod,
+	qtnQueryMod,
+	qtnQueryModv2,
+	slsQueryMod,
+	mchQueryMod,
+	mtrlQueryMod,
+	setupQueryMod,
+} = require("./helpers/dbconn");
 
+setupQuery("SELECT 1", (res) => {
+	console.log("Connected to MySQL successfully. ");
+});
+app.use(cors());
 const userRouter = require("./routes/user");
 
 const unitRouter = require("./routes/units");
@@ -39,16 +55,15 @@ const fileRouter = require("./routes/files");
 const orderListRouter = require("./routes/OrderList/OrderList");
 const { logger } = require("./helpers/logger");
 
-const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
-const CombinedScheduleCreate = require('./routes/CombinedSchedule/CombinedScheduleCreate');
-const scheduleListCombined = require('./routes/CombinedSchedule/scheduleListCombined');
-const ProductionSchCreationRouter=require('./routes/OrderRoutes/ProductionSchCreation');
-const NCProgramRouter=require('./routes/OrderRoutes/NCprogram');
+const ScheduleListRouter = require("./routes/OrderRoutes/ScheduleList");
+const CombinedScheduleCreate = require("./routes/CombinedSchedule/CombinedScheduleCreate");
+const scheduleListCombined = require("./routes/CombinedSchedule/scheduleListCombined");
+const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
+const NCProgramRouter = require("./routes/OrderRoutes/NCprogram");
 const taskSheet = require("./routes/taskSheet");
 const solidState = require("./routes/solidState");
 const co2 = require("./routes/co2");
 
-app.use(cors());
 app.use(bodyParser.json());
 app.use("/user", userRouter);
 app.use("/units", unitRouter);
@@ -83,12 +98,35 @@ app.use("/ScheduleList", ScheduleListRouter);
 app.use("/CombinedScheduleCreate", CombinedScheduleCreate);
 app.use("/scheduleListCombined", scheduleListCombined);
 
-app.use("/productionSchCreation",ProductionSchCreationRouter);
-app.use("/NCProgram",NCProgramRouter);
+app.use("/productionSchCreation", ProductionSchCreationRouter);
+app.use("/NCProgram", NCProgramRouter);
 app.use("/taskSheet", taskSheet);
 app.use("/solidState", solidState);
 app.use("/co2", co2);
 
+// Deleted routess
+// NEW ORDER ROUTES
+const OrderDetailsRouter = require("./routes/OrderRoutes/OrderDetails");
+// const ProductionSchCreationRouter = require("./routes/OrderRoutes/ProductionSchCreation");
+const ProfarmaInvListRouter = require("./routes/OrderRoutes/ProfarmaInvList");
+const ProfarmaInvFormRouter = require("./routes/OrderRoutes/ProfarmaInvForm");
+const PackingNoteAndInvoiceRouter = require("./routes/OrderRoutes/PackingNoteAndInvoice");
+// const ScheduleListRouter=require("./routes/OrderRoutes/ScheduleList");
+// const NCprogramRoter=require("./routes/OrderRoutes/NCprogram");
+// running no
+const runningNoRouter = require("./routes/runningNo");
+
+app.use("/runningNo", runningNoRouter);
+// app.use("/NCProgram",NCprogramRoter)
+// app.use(fileUpload());
+
+// NEW ODER ROUTES
+app.use("/orderDetails", OrderDetailsRouter);
+app.use("/productionSchCreation", ProductionSchCreationRouter);
+app.use("/profarmaInvList", ProfarmaInvListRouter);
+// app.use("/scheduleList", ScheduleListRouter);
+app.use("/orderPackingNoteAndInvoice", PackingNoteAndInvoiceRouter);
+app.use("/profarmaInvForm", ProfarmaInvFormRouter);
 
 // app.use(fileUpload());
 

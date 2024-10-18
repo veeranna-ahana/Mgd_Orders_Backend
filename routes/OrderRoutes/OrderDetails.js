@@ -10,13 +10,55 @@ const {
 } = require("../../helpers/dbconn");
 const { logger } = require("../../helpers/logger");
 
+// OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
+// 	console.log("entering into insertnewsrldata");
+// 	console.log("req.body", req.body);
+
+// 	try {
+// 		misQueryMod(
+// 			`SELECT * FROM magodmis.order_details where Order_No=${req.body.requestData.OrderNo}`,
+// 			(err, data1) => {
+// 				if (err) {
+// 					logger.error(err);
+// 				} else {
+// 					try {
+// 						misQueryMod(
+// 							`INSERT INTO magodmis.order_details (
+//                 Order_No,Order_Srl,  Cust_Code,DwgName,Dwg_Code,mtrl_code,Operation,Mtrl_Source,Qty_Ordered,InspLevel,PackingLevel,JWCost,MtrlCost,Dwg,tolerance,HasBOM) VALUES (
+//                 ${req.body.requestData.OrderNo},
+//                 ${req.body.requestData.newOrderSrl},
+//                 ${req.body.requestData.custcode},
+//                 '${req.body.requestData.DwgName}',
+//                 '${req.body.requestData.Dwg_Code}',
+//                 '${req.body.requestData.strmtrlcode}',
+//                 '${req.body.requestData.Operation}',
+//                 '${req.body.requestData.NewSrlFormData.MtrlSrc}',
+//                 ${parseInt(req.body.requestData.Qty_Ordered)},
+//                 '${req.body.requestData.NewSrlFormData.InspLvl}',
+//                 '${req.body.requestData.NewSrlFormData.PkngLvl}',
+//                 ${parseFloat(req.body.requestData.JwCost)},
+//                 ${parseFloat(req.body.requestData.mtrlcost)},
+//                 ${req.body.requestData.dwg},
+//                 '${req.body.requestData.tolerance}',
+//                 ${req.body.requestData.HasBOM} )`,
+// 							(err, srldata) => {
+// 								if (err) {
+// 									logger.error(err);
+// 								} else {
+// 									res.send(srldata);
+// 								}
+// 							}
+// 						);
+// 					} catch (error) {}
+// 				}
+// 			}
+// 		);
+// 	} catch (error) {}
+// });
+
 OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
 	console.log("entering into insertnewsrldata");
-	// console.log("req.body", req.body);
-	console.log(
-		"req.body.requestData.strmtrlcode..",
-		req.body.requestData.strmtrlcode
-	);
+	console.log("req.body", req.body);
 
 	try {
 		misQueryMod(
@@ -26,25 +68,44 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
 					logger.error(err);
 				} else {
 					try {
+						const orderNo = req.body.requestData.OrderNo;
+						const newOrderSrl = req.body.requestData.newOrderSrl;
+						const custcode = req.body.requestData.custcode;
+						const dwgName = req.body.requestData.DwgName;
+						const dwgCode = req.body.requestData.Dwg_Code || "";
+						const strmtrlcode = req.body.requestData.strmtrlcode || "";
+						const operation = req.body.requestData.Operation || "";
+						const mtrlSrc = req.body.requestData.NewSrlFormData.MtrlSrc;
+						const qtyOrdered = parseInt(req.body.requestData.Qty_Ordered) || 0;
+						const inspLvl = req.body.requestData.NewSrlFormData.InspLvl;
+						const pkngLvl = req.body.requestData.NewSrlFormData.PkngLvl;
+						const jwCost = parseFloat(req.body.requestData.JwCost) || 0.0;
+						const mtrlCost = parseFloat(req.body.requestData.mtrlcost) || 0.0;
+						const dwg = req.body.requestData.dwg || 0;
+						const tolerance = req.body.requestData.tolerance;
+						const hasBOM = req.body.requestData.HasBOM || 0;
+
 						misQueryMod(
 							`INSERT INTO magodmis.order_details (
-                Order_No,Order_Srl,  Cust_Code,DwgName,Dwg_Code,mtrl_code,Operation,Mtrl_Source,Qty_Ordered,InspLevel,PackingLevel,JWCost,MtrlCost,Dwg,tolerance,HasBOM) VALUES (
-                ${req.body.requestData.OrderNo},
-                ${req.body.requestData.newOrderSrl},
-                ${req.body.requestData.custcode},
-                '${req.body.requestData.DwgName}',
-                '${req.body.requestData.Dwg_Code}',
-                '${req.body.requestData.strmtrlcode}',
-                '${req.body.requestData.Operation}',
-                '${req.body.requestData.NewSrlFormData.MtrlSrc}',
-                ${parseInt(req.body.requestData.Qty_Ordered)},
-                '${req.body.requestData.NewSrlFormData.InspLvl}',
-                '${req.body.requestData.NewSrlFormData.PkngLvl}',
-                ${parseFloat(req.body.requestData.JwCost)},
-                ${parseFloat(req.body.requestData.mtrlcost)},
-                ${req.body.requestData.dwg},
-                '${req.body.requestData.tolerance}',
-                ${req.body.requestData.HasBOM} )`,
+                                Order_No, Order_Srl, Cust_Code, DwgName, Dwg_Code, mtrl_code, Operation, Mtrl_Source, Qty_Ordered, InspLevel, PackingLevel, JWCost, MtrlCost, Dwg, tolerance, HasBOM
+                            ) VALUES (
+                                '${orderNo}',
+                                ${newOrderSrl},
+                                '${custcode}',
+                                '${dwgName}',
+                                '${dwgCode}',
+                                '${strmtrlcode}',
+                                '${operation}',
+                                '${mtrlSrc}',
+                                ${qtyOrdered},
+                                '${inspLvl}',
+                                '${pkngLvl}',
+                                ${jwCost},
+                                ${mtrlCost},
+                                ${dwg},
+                                '${tolerance}',
+                                ${hasBOM}
+                            )`,
 							(err, srldata) => {
 								if (err) {
 									logger.error(err);
@@ -53,11 +114,15 @@ OrderDetailsRouter.post(`/insertnewsrldata`, async (req, res, next) => {
 								}
 							}
 						);
-					} catch (error) {}
+					} catch (error) {
+						logger.error(error);
+					}
 				}
 			}
 		);
-	} catch (error) {}
+	} catch (error) {
+		logger.error(error);
+	}
 });
 
 OrderDetailsRouter.post(`/getbomdata`, async (req, res, next) => {
@@ -101,7 +166,8 @@ OrderDetailsRouter.post(`/getfindoldpartdata`, async (req, res, next) => {
 	////console.log("req", req.body);
 	try {
 		misQueryMod(
-			`SELECT * FROM magodmis.order_details WHERE cust_code=${req.body.custcode}`,
+			// `SELECT * FROM magodmis.order_details WHERE cust_code=${req.body.custcode}`,
+			`SELECT * FROM magodmis.orderscheduledetails WHERE cust_code=${req.body.custcode}`,
 			(err, findoldpartdata) => {
 				if (err) {
 					////console.log("error", err);
@@ -331,7 +397,7 @@ OrderDetailsRouter.post(`/LoadArrival`, async (req, res, next) => {
 });
 
 OrderDetailsRouter.post(`/LoadArrival2`, async (req, res, next) => {
-	// //console.log("reqqqqqqqq", req.body);
+	console.log("reqqqqqqqq", req.body);
 	try {
 		misQueryMod(
 			`SELECT m.rvID, m.Mtrl_Code, m.DynamicPara1, m.DynamicPara2, m.Qty, m.updated 
@@ -341,7 +407,7 @@ OrderDetailsRouter.post(`/LoadArrival2`, async (req, res, next) => {
 					//console.log("error", err);
 					res.status(500).send("Internal Server Error");
 				} else {
-					// //console.log("data1", data1);
+					console.log("data1", data1);
 					res.send(data1);
 				}
 			}
@@ -527,6 +593,9 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 	const selectedItems = req.body.selectedItems;
 	const orderNo = req.body.OrderNo;
 
+	console.log("reqBody", req.body);
+	console.log("reqBody", req.body.MtrlSrc);
+
 	let completedUpdates = 0;
 	const executeUpdate = (
 		orderSrl,
@@ -537,7 +606,9 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 		UnitPrice,
 		Operation,
 		InspLevel,
-		PackingLevel
+		PackingLevel,
+		Mtrl_Source,
+		Mtrl_Code
 	) => {
 		const updateQuery = `
       UPDATE magodmis.order_details
@@ -545,11 +616,13 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
         Qty_Ordered = ${qtyOrdered},
         DwgName = '${DwgName}',
         JWCost = ${JWCost},
-			  MtrlCost = ${MtrlCost},
-			  UnitPrice = ${UnitPrice},
-			  Operation = '${Operation}',
-			  InspLevel = '${InspLevel}',
-			  PackingLevel = '${PackingLevel}'
+		MtrlCost = ${MtrlCost},
+		UnitPrice = ${UnitPrice},
+		Operation = '${Operation}',
+		InspLevel = '${InspLevel}',
+		PackingLevel = '${PackingLevel}',
+		Mtrl_Source='${Mtrl_Source}',
+		 Mtrl_Code='${Mtrl_Code}'
       WHERE Order_No = ${orderNo} 
       AND Order_Srl = ${orderSrl}
     `;
@@ -575,15 +648,32 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 			const orderSrl = orderSrlArray[i];
 			const oldValues = selectedItems[i];
 
-			const qtyOrdered = parseInt(oldValues.quantity);
+			console.log("oldValues", oldValues);
+			let qtyOrdered; // Define variable to hold the value
+
+			if (typeof oldValues.quantity !== "undefined") {
+				qtyOrdered = parseInt(oldValues.quantity); // Assuming quantity is numeric
+			} else {
+				qtyOrdered = oldValues.Qty_Ordered; // Use oldValues.Qty_Ordered if quantity is undefined
+			}
+			console.log("qtyOrdered...", qtyOrdered);
 			const DwgName = oldValues.DwgName;
-			const JWCost = oldValues.JWCost;
-			const MtrlCost = oldValues.MtrlCost;
-			const UnitPrice = oldValues.UnitPrice;
+			const JWCost = parseInt(oldValues.JWCost);
+			const MtrlCost = parseInt(oldValues.MtrlCost);
+			const UnitPrice = parseInt(oldValues.UnitPrice);
 			const Operation = oldValues.Operation;
 			const InspLevel = oldValues.InspLevel;
 			const PackingLevel = oldValues.PackingLevel;
 
+			let Mtrl_Source;
+			if (req.body.MtrlSrc !== "") {
+				Mtrl_Source = req.body.MtrlSrc;
+			} else {
+				Mtrl_Source = oldValues.Mtrl_Source;
+			}
+			console.log("Mtrl_Source", Mtrl_Source);
+			console.log("oldValues.Mtrl_Source", oldValues.Mtrl_Source);
+			const Mtrl_Code = oldValues.Mtrl_Code;
 			await executeUpdate(
 				orderSrl,
 				qtyOrdered,
@@ -593,7 +683,9 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 				UnitPrice,
 				Operation,
 				InspLevel,
-				PackingLevel
+				PackingLevel,
+				Mtrl_Source,
+				Mtrl_Code
 			);
 
 			completedUpdates++;
@@ -607,7 +699,7 @@ OrderDetailsRouter.post("/bulkChangeUpdate", async (req, res, next) => {
 });
 OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
 	console.log("enter into singleChangeUpdate");
-	console.log("req.body.MtrlSrc", req.body.MtrlSrc);
+	console.log("req.body", req.body);
 
 	try {
 		const qtyOrdered = parseInt(req.body.quantity);
@@ -619,6 +711,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
 		const PkngLvl = req.body.PkngLvl;
 		const DwgName = req.body.DwgName;
 		const Mtrl_Source = req.body.MtrlSrc;
+		const Mtrl_Code = req.body.strmtrlcode;
 
 		const updateQuery = `
     UPDATE magodmis.order_details
@@ -627,7 +720,7 @@ OrderDetailsRouter.post("/singleChangeUpdate", async (req, res, next) => {
       JWCost = CASE WHEN ${jwRate} IS NOT NULL THEN ${jwRate} ELSE JWCost END,
      MtrlCost = CASE WHEN ${materialRate} IS NOT NULL THEN ${materialRate} ELSE MtrlCost END,
       UnitPrice = CASE WHEN ${unitPrice} IS NOT NULL THEN ${unitPrice} ELSE UnitPrice END,
-      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}',Mtrl_Source='${Mtrl_Source}'
+      Operation = '${Operation}',InspLevel='${InspLvl}', PackingLevel='${PkngLvl}',DwgName='${DwgName}',Mtrl_Source='${Mtrl_Source}',Mtrl_Code='${Mtrl_Code}'
      
     WHERE Order_No = ${req.body.OrderNo} AND Order_Srl = ${req.body.OrderSrl}
   `;

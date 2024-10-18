@@ -9,7 +9,9 @@ const {
 } = require("../../helpers/dbconn");
 
 ScheduleListRouter.post(`/getScheduleListData`, async (req, res, next) => {
-  // console.log("req.body /getScheduleListData is",req.body);
+
+  // const scheduleType = req.body.type === 'Service' ? req.body.type : req.body.scheduleType;
+
   let query = `SELECT * FROM magodmis.orderschedule WHERE Order_No='${req.body.Order_No}'`;
 
   try {
@@ -69,8 +71,8 @@ ScheduleListRouter.post(`/ScheduleDetails`, async (req, res, next) => {
 
 //Task and  Material List
 ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
-  // console.log("req.body is",req.body.scheduleDetailsRow.NcTaskId);
-  let query = `SELECT * FROM magodmis.nc_task_list where NcTaskId='${req.body.scheduleDetailsRow.NcTaskId}';
+  // console.log("req.body of task and material is",req.body);
+  let query = `SELECT * FROM magodmis.nc_task_list where ScheduleID='${req.body.ScheduleId}';
     `;
 
   try {
@@ -89,25 +91,32 @@ ScheduleListRouter.post(`/getTaskandMterial`, async (req, res, next) => {
 
 //get DWg List of Selected Task
 ScheduleListRouter.post(`/getDwgDataListTMTab`, async (req, res, next) => {
+
+  // Check if req.body.list and req.body.list.NcTaskId are present
+  if (!req.body.list || !req.body.list.NcTaskId) {
+    return res.status(400).send({ error: "NcTaskId is required" });
+  }
+
   let query = `SELECT * FROM magodmis.orderscheduledetails where NcTaskId='${req.body.list.NcTaskId}'`;
 
   try {
     misQueryMod(query, (err, data) => {
       if (err) {
         console.log("err", err);
+        return next(err); // Pass the error to the error handling middleware
       } else {
         res.send(data);
-        // console.log("data is",data);
+        // console.log("data is", data);
       }
     });
   } catch (error) {
-    next(error);
+    next(error); // Pass any uncaught errors to the error handling middleware
   }
 });
 
+
 ///get Form Values in Order Schedule Details
 ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
-  // console.log("req.body /getTaskandMterial is",req.body);
   let query = `SELECT o.*, c.Cust_name  FROM magodmis.orderschedule AS o JOIN magodmis.cust_data AS c  ON o.Cust_Code = c.Cust_Code WHERE o.Cust_Code = '${req.body.Cust_Code}' AND o.ScheduleId = '${req.body.ScheduleId}'`;
   try {
     misQueryMod(query, (err, data) => {
@@ -124,25 +133,25 @@ ScheduleListRouter.post(`/getFormDeatils`, async (req, res, next) => {
 
 //Button Save
 ScheduleListRouter.post(`/save`, async (req, res, next) => {
-  // Constructing the query to update orderscheduledetails table
+  // Constructing the first query to update orderscheduledetails table
   let query = `UPDATE magodmis.orderscheduledetails o,
-    (SELECT  CASE
-    WHEN o.QtyScheduled=0  THEN 'Cancelled'
-    WHEN o.QtyDelivered>=o.QtyScheduled THEN 'Dispatched'
-    WHEN o.QtyPacked>=o.QtyScheduled THEN 'Ready'
-    WHEN o.QtyCleared>=o.QtyScheduled THEN IF(o1.ScheduleType='Combined' , 'Closed' , 'Inspected')
-    WHEN o.QtyProduced-o.QtyRejected>=o.QtyScheduled THEN 'Completed'
-    WHEN o.QtyProgrammed>=o.QtyScheduled THEN 'Programmed'
-    WHEN o.QtyProgrammed>0 THEN 'Production'
-    WHEN o.QtyScheduled> 0 THEN 'Tasked'                 
+    (SELECT CASE
+    WHEN o.QtyScheduled = 0 THEN 'Cancelled'
+    WHEN o.QtyDelivered >= o.QtyScheduled THEN 'Dispatched'
+    WHEN o.QtyPacked >= o.QtyScheduled THEN 'Ready'
+    WHEN o.QtyCleared >= o.QtyScheduled THEN IF(o1.ScheduleType = 'Combined', 'Closed', 'Inspected')
+    WHEN o.QtyProduced - o.QtyRejected >= o.QtyScheduled THEN 'Completed'
+    WHEN o.QtyProgrammed >= o.QtyScheduled THEN 'Programmed'
+    WHEN o.QtyProgrammed > 0 THEN 'Production'
+    WHEN o.QtyScheduled > 0 THEN 'Tasked'                 
     ELSE 'Created' END AS STATUS, o.SchDetailsID
-    FROM magodmis.orderscheduledetails o,magodmis.orderschedule o1
-    WHERE o1.ScheduleId=o.ScheduleId 
-    AND o1.ScheduleId='${req.body.scheduleDetailsRow.ScheduleId}' ) A
-    SET o.Schedule_Status=a.Status
-    WHERE a.SchDetailsID= o.SchDetailsID`;
+    FROM magodmis.orderscheduledetails o, magodmis.orderschedule o1
+    WHERE o1.ScheduleId = o.ScheduleId 
+    AND o1.ScheduleId = '${req.body.formdata[0].ScheduleId}' ) A
+    SET o.Schedule_Status = A.Status
+    WHERE A.SchDetailsID = o.SchDetailsID`;
 
-  // Constructing the query to update orderschedule table
+  // Constructing the second query to update orderschedule table
   let updateOrderScheduleQuery = `UPDATE magodmis.orderschedule 
                                     SET Special_Instructions='${req.body.SpclInstruction}',
                                         Delivery_Date='${req.body.deliveryDate}',
@@ -153,15 +162,42 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
     // Executing the first query
     misQueryMod(query, (err, data) => {
       if (err) {
-        console.log("err", err);
+        console.log("Error in orderscheduledetails update:", err);
+        return res.status(500).send(err);
       } else {
         // Executing the second query inside the callback of the first query
-        misQueryMod(updateOrderScheduleQuery, (updateErr, updateData) => {
+        misQueryMod(updateOrderScheduleQuery, async (updateErr, updateData) => {
           if (updateErr) {
             console.log("Error updating orderschedule:", updateErr);
+            return res.status(500).send(updateErr);
           } else {
-            // Sending response after both queries are executed
-            res.send(updateData);
+            // Looping through newState and executing the update query for each array item
+            try {
+              const updateDetailsPromises = req.body.newState.map((item) => {
+                const updateDetailQuery = `UPDATE magodmis.orderscheduledetails 
+                                           SET JWCost = '${item.JWCost}', MtrlCost = '${item.MtrlCost}'
+                                           WHERE SchDetailsID = '${item.SchDetailsID}'`;
+                return new Promise((resolve, reject) => {
+                  misQueryMod(updateDetailQuery, (err, result) => {
+                    if (err) {
+                      console.log(`Error updating SchDetailsID ${item.SchDetailsID}:`, err);
+                      reject(err);
+                    } else {
+                      resolve(result);
+                    }
+                  });
+                });
+              });
+
+              // Wait for all update queries for newState to complete
+              await Promise.all(updateDetailsPromises);
+
+              // Sending response after all queries are executed successfully
+              res.send(updateData);
+            } catch (error) {
+              console.log("Error updating orderscheduledetails:", error);
+              next(error);
+            }
           }
         });
       }
@@ -170,6 +206,8 @@ ScheduleListRouter.post(`/save`, async (req, res, next) => {
     next(error);
   }
 });
+
+
 
 //Onclick of Suspend
 ScheduleListRouter.post(`/suspendButton`, async (req, res, next) => {
@@ -410,7 +448,6 @@ function updateNCTaskList(scheduleDetailsRow, callback) {
 
 //Onclick of Button Task
 ScheduleListRouter.post(`/taskOnclick`, async (req, res, next) => {
-  // console.log("req.body /getTaskandMterial is",req.body);
   let query = ``;
 
   try {
@@ -428,7 +465,6 @@ ScheduleListRouter.post(`/taskOnclick`, async (req, res, next) => {
 
 //Onclick of Button Cancel
 ScheduleListRouter.post(`/onClickCancel`, async (req, res, next) => {
-  console.log("req.body",req.body.newState);
   try {
     let query = `SELECT * FROM magodmis.orderscheduledetails WHERE SchDetailsID='${req.body.newState[0].SchDetailsID}';`;
 
@@ -652,17 +688,6 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
 
                                   let neworderSch = `${req.body.formdata[0].Order_No} ${nextSRL}`;
 
-                                  // console.log(
-                                  //   "neworderSch is",
-                                  //   neworderSch,
-                                  //   "nextSRL is",
-                                  //   nextSRL,
-                                  //   "ScheduleId is",
-                                  //   req.body.formdata[0].ScheduleId
-                                  // );
-
-                                  console.log("neworderSch is",neworderSch);
-
                                   let updateSRLQuery = `UPDATE magodmis.orderschedule 
                                   SET OrdSchNo='${neworderSch}', 
                                       ScheduleNo='${nextSRL}', 
@@ -671,7 +696,7 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                       ScheduleDate=now() 
                                   WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
 
-                                      let updateQuery2 = `UPDATE orderscheduledetails SET OrderScheduleNo='${neworderSch}', ScheduleNo='${nextSRL}' 
+                                  let updateQuery2 = `UPDATE orderscheduledetails SET ScheduleNo='${neworderSch}', Schedule_Srl='${nextSRL}' 
                                       WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
 
                                   misQueryMod(
@@ -686,7 +711,6 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                           error: "Internal Server Error",
                                         });
                                       } else {
-                                        console.log("result is", result4);
                                         misQueryMod(
                                           updateQuery2,
                                           (err, result2) => {
@@ -717,126 +741,172 @@ ScheduleListRouter.post(`/ScheduleButton`, async (req, res, next) => {
                                                     /////Create Task
                                                     let selectScheduleDetailsQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
 
-                                                    misQueryMod(
-                                                      selectScheduleDetailsQuery,
-                                                      (
-                                                        err,
-                                                        scheduleDetails
-                                                      ) => {
-                                                        if (err) {
-                                                          console.log(
-                                                            "Error executing select query for orderscheduledetails:",
-                                                            err
-                                                          );
-                                                          return res
-                                                            .status(500)
-                                                            .json({
-                                                              error:
-                                                                "Internal Server Error",
-                                                            });
-                                                        } else {
-                                                          const taskNumbers = {}; // Object to store task numbers for each combination
-let taskNumberCounter = 0; // Counter for generating task numbers
+                                                    misQueryMod(selectScheduleDetailsQuery, (err, scheduleDetails) => {
+                                                      if (err) {
+                                                        console.log("Error executing select query for orderscheduledetails:", err);
+                                                        return res.status(500).json({
+                                                          error: "Internal Server Error",
+                                                        });
+                                                      } else {
+                                                        const taskCounters = {};
+                                                        let taskNumber = 1;
+                                                    
+                                                        // Modify the grouping logic based on req.body.Type
 
-// Iterate through scheduleDetails to generate and update task numbers
-scheduleDetails.forEach((row) => {
-    // Increment the task number counter for each row
-    taskNumberCounter++;
-
-    // Construct a unique key based on Mtrl_Code, MProcess, and Operation
-    const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
-
-    // Generate the task number with the format "neworderSch taskNumber"
-    const TaskNo = `${neworderSch} ${taskNumberCounter.toString().padStart(2, "0")}`;
-
-                                                          
-                                                            // console.log("TaskNo",TaskNo);
-
-                                                              // Insert into magodmis.nc_task_list table
-                                                              let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
-                                                             ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
-                                                                           VALUES('${TaskNo}', '${row.ScheduleId}', '${formattedDate}',
-                                                                            '${req.body.formdata[0].OrdSchNo}',  ${nextSRL}, 
-                                                                            '${req.body.formdata[0].Cust_Code}',  '${row.Mtrl_Code}',
-                                                                            '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '1',
-                                                                            '${row.QtyScheduled}',  '${row.MProcess}', '${row.Operation}')`;
-
-                                                              // Execute the insert query
-                                                              misQueryMod(
-                                                                insertNcTaskListQuery,
-                                                                (
-                                                                  err,
-                                                                  result
-                                                                ) => {
-                                                                  if (err) {
-                                                                    console.log(
-                                                                      "Error inserting into nc_task_list:",
-                                                                      err
-                                                                    );
-                                                                  } else {
-                                                                    const NcTaskId =
-                                                                      result.insertId;
-                                                                    // Update the TaskNo for the current row in the database
-                                                                    let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails 
-                                                                           SET TaskNo='${TaskNo}',NcTaskId='${NcTaskId}'
-                                                                           WHERE SchDetailsID='${row.SchDetailsID}'`;
-
-                                                                    // Execute the update query
-                                                                    misQueryMod(
-                                                                      updateTaskNoQuery,
-                                                                      (
-                                                                        err,
-                                                                        result
-                                                                      ) => {
-                                                                        if (
-                                                                          err
-                                                                        ) {
-                                                                          console.log(
-                                                                            "Error updating TaskNo:",
-                                                                            err
-                                                                          );
-                                                                        } else {
-                                                                          const TaskNo1 =
-                                                                            TaskNo;
-
-                                                                          // Insert into magodmis.task_partslist table
-                                                                          let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest,OrdScheduleSrl, OrdSch, HasBOM) Values('${NcTaskId}','${TaskNo1}','${row.SchDetailsID}','${row.DwgName}','${row.QtyScheduled}','${row.Schedule_Srl}','${row.OrderScheduleNo}','${row.HasBOM}')`;
-
-                                                                          // Execute the insert query
-                                                                          misQueryMod(
-                                                                            insertTaskPartsListQuery,
-                                                                            (
-                                                                              err,
-                                                                              result
-                                                                            ) => {
-                                                                              if (
-                                                                                err
-                                                                              ) {
-                                                                                console.log(
-                                                                                  "Error inserting into task_partslist:",
-                                                                                  err
-                                                                                );
-                                                                              }
-                                                                            }
-                                                                          );
-                                                                        }
-                                                                      }
-                                                                    );
-                                                                  }
-                                                                }
-                                                              );
+                                                        const groupedTasks = req.body.Type === 'Profile'
+                                                        ? scheduleDetails.reduce((acc, row) => {
+                                                            // Create a key for grouping based on Mtrl_Code, MProcess, and Operation
+                                                            const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
+                                                      
+                                                            // Initialize the task counter for this unique key if not already present
+                                                            if (!taskCounters[key]) {
+                                                              taskCounters[key] = taskNumber.toString().padStart(2, "0"); // Assign a task number and increment the counter
+                                                              taskNumber++; 
                                                             }
-                                                          );
+                                                      
+                                                            // Generate the task number with the format "neworderSch taskNumber"
+                                                            row.TaskNo = `${neworderSch} ${taskCounters[key]}`;
 
-                                                          return res
-                                                            .status(200)
-                                                            .json({
-                                                              message:
-                                                                "Scheduled",
+                                                            console.log("row.TaskNo is",row.TaskNo);
+                                                      
+                                                            // Group rows by TaskNo
+                                                            if (!acc[row.TaskNo]) {
+                                                              acc[row.TaskNo] = [];
+                                                            }
+                                                      
+                                                            // Add the current row to the task group
+                                                            acc[row.TaskNo].push(row);
+                                                            return acc;
+                                                          }, {})
+                                                            : // For 'Service' and 'Fabrication', create a separate task for each row, ensuring unique TaskNo
+                                                              scheduleDetails.reduce((acc, row) => {
+                                                                row.TaskNo = `${neworderSch} ${taskNumber.toString().padStart(2, "0")}`;
+                                                                taskNumber++; 
+                                                                console.log("This is service/fabrication part executing for SchDetailsID:", row.SchDetailsID);
+                                                        
+                                                                acc[row.SchDetailsID] = [row]; // Ensure each row gets a unique task based on SchDetailsID
+                                                                return acc;
+                                                              }, {});
+                                                        
+                                                    
+                                                        // Function to execute database queries
+                                                        const queryDatabase = (query) => {
+                                                          return new Promise((resolve, reject) => {
+                                                            misQueryMod(query, (err, results) => {
+                                                              if (err) {
+                                                                return reject(err);
+                                                              }
+                                                              resolve(results);
                                                             });
-                                                        }
+                                                          });
+                                                        };
+                                                    
+                                                        // Function to process a single task (for a group of rows with the same TaskNo)
+                                                        const processTask = async (taskGroup) => {
+                                                          try {
+                                                            const row = taskGroup[0]; // Use the first row to get the common details
+                                                        
+                                                            // Query to get the ProcessID based on the ProcessDescription
+                                                            let selectProcessIdQuery = `SELECT ProcessID FROM machine_data.magod_process_list WHERE ProcessDescription='${row.Operation}'`;
+                                                            const processIdData = await queryDatabase(selectProcessIdQuery);
+                                                        
+                                                            if (processIdData.length === 0) {
+                                                              console.log(`No ProcessID found for Operation ${row.Operation}`);
+                                                              throw new Error(`No ProcessID found for Operation ${row.Operation}`);
+                                                            }
+                                                        
+                                                            const MProcess = processIdData[0].ProcessID;
+                                                        
+                                                            // Calculate total NoOfDwgs and TotalParts for the task
+                                                            const noOfDwgs = taskGroup.length;
+                                                            const totalParts = taskGroup.reduce((sum, item) => sum + item.QtyScheduled, 0);
+                                                        
+                                                            let NcTaskId;
+                                                        
+                                                            // Check if the Operation Type is "Profile"
+                                                            if (req.body.Type === "Profile") {
+                                                              // Check if an entry already exists in the nc_task_list table
+                                                              let selectTaskQuery = `SELECT * FROM magodmis.nc_task_list WHERE ScheduleID='${row.ScheduleId}' AND Mtrl_Code='${row.Mtrl_Code}'`;
+                                                              const existingTaskData = await queryDatabase(selectTaskQuery);
+
+
+                                                        
+                                                              if (existingTaskData.length > 0) {
+                                                                // Entry exists, so update it
+                                                                let updateNcTaskListQuery = `UPDATE magodmis.nc_task_list
+                                                                                             SET TaskNo='${row.TaskNo}', NoOfDwgs='${noOfDwgs}', TotalParts='${totalParts}', 
+                                                                                                 MProcess='${MProcess}', Operation='${row.Operation}', ScheduleNo='${neworderSch}'
+                                                                                             WHERE ScheduleID='${row.ScheduleId}' AND Mtrl_Code='${row.Mtrl_Code}'`;
+                                                                await queryDatabase(updateNcTaskListQuery);
+
+                                                                console.log("updateNcTaskListQuery is",updateNcTaskListQuery);
+                                                                NcTaskId = existingTaskData[0].NcTaskId;
+                                                                console.log(`Updated task in nc_task_list for ScheduleID: ${row.ScheduleId} and Mtrl_Code: ${row.Mtrl_Code}`);
+                                                              } else {
+                                                                // Entry does not exist, insert a new task
+                                                                let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
+                                                                                              ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
+                                                                                              VALUES('${row.TaskNo}', '${row.ScheduleId}', '${formattedDate}',
+                                                                                              '${req.body.formdata[0].OrdSchNo}', '${neworderSch}', 
+                                                                                              '${req.body.formdata[0].Cust_Code}', '${row.Mtrl_Code}',
+                                                                                              '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '${noOfDwgs}',
+                                                                                              '${totalParts}', '${MProcess}', '${row.Operation}')`;
+                                                                const insertResult = await queryDatabase(insertNcTaskListQuery);
+                                                                NcTaskId = insertResult.insertId;
+                                                              }
+                                                            } else {
+                                                              // If not Profile, directly insert the new task
+                                                              let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
+                                                                                          ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
+                                                                                          VALUES('${row.TaskNo}', '${row.ScheduleId}', '${formattedDate}',
+                                                                                          '${req.body.formdata[0].OrdSchNo}', '${neworderSch}', 
+                                                                                          '${req.body.formdata[0].Cust_Code}', '${row.Mtrl_Code}',
+                                                                                          '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '${noOfDwgs}',
+                                                                                          '${totalParts}', '${MProcess}', '${row.Operation}')`;
+                                                              const insertResult = await queryDatabase(insertNcTaskListQuery);
+                                                              NcTaskId = insertResult.insertId;
+                                                              console.log(`Inserted new task in nc_task_list for non-Profile Operation for ScheduleID: ${row.ScheduleId} and Mtrl_Code: ${row.Mtrl_Code}`);
+                                                            }
+                                                        
+                                                            // Common queries for both insert and update
+                                                            for (const row of taskGroup) {
+                                                              // Update TaskNo and NcTaskId for each row in the task group
+                                                              let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails 
+                                                                                       SET TaskNo='${row.TaskNo}', NcTaskId='${NcTaskId}'
+                                                                                       WHERE SchDetailsID='${row.SchDetailsID}'`;
+                                                              await queryDatabase(updateTaskNoQuery);
+                                                        
+                                                              // Insert into task_partslist table using the newly inserted NcTaskId
+                                                              let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl, 
+                                                                                            OrdSch, HasBOM) 
+                                                                                            SELECT '${NcTaskId}', '${row.TaskNo}', o.SchDetailsID, o.DwgName, o.QtyScheduled, o.Schedule_Srl,
+                                                                                            '${neworderSch}', o.HasBOM 
+                                                                                            FROM magodmis.orderscheduledetails o WHERE o.SchDetailsID='${row.SchDetailsID}'`;
+                                                              await queryDatabase(insertTaskPartsListQuery);
+                                                            }
+                                                          } catch (err) {
+                                                            console.log("Error processing task:", err);
+                                                          }
+                                                        };
+                                                        
+                                                        
+                                                    
+                                                        // Process each task sequentially
+                                                        const processAllTasks = async () => {
+                                                          for (const taskGroup of Object.values(groupedTasks)) {
+                                                            await processTask(taskGroup);
+                                                          }
+                                                        };
+                                                    
+                                                        // Start processing tasks
+                                                        processAllTasks();
+                                                    
+                                                        return res.status(200).json({
+                                                          message: "Scheduled",
+                                                        });
                                                       }
-                                                    );
+                                                    });
+                                                    
                                                   }
                                                 }
                                               );
@@ -866,6 +936,286 @@ scheduleDetails.forEach((row) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
+
+ScheduleListRouter.post(`/scheduleAfterLogin`, async (req, res, next) => {
+  try {
+    const originalDate = new Date(); // Assuming this is the date you want to format
+    const formattedDate = originalDate.toISOString().slice(0, 19).replace("T", " ");
+
+    // Query to select ScheduleCount
+    let selectQuery = `SELECT o.ScheduleCount FROM magodmis.order_list o WHERE o.Order_No='${req.body.formdata[0].Order_No}'`;
+
+    misQueryMod(selectQuery, (err, selectData) => {
+      if (err) {
+        console.log("Error executing select query:", err);
+        return res.status(500).json({ error: "Internal Server Error" });
+      } else {
+        const scheduleCount = selectData[0].ScheduleCount;
+        let newState = req.body.newState; // Assuming newState is an array of objects
+
+        // Loop through newState array and execute updateQuery1 for each object
+        newState.forEach((item) => {
+          let updateQuery1 = `UPDATE order_details SET QtyScheduled=QtyScheduled+'${item.QtyScheduled}' WHERE OrderDetailID='${item.OrderDetailID}'`;
+
+          // Execute the update query for order_details
+          misQueryMod(updateQuery1, (err, result) => {
+            if (err) {
+              console.log("Error executing update query 1:", err);
+              return res.status(500).json({ error: "Internal Server Error" });
+            } else {
+              // Update magodmis.orderscheduledetails
+              let updateQuery2 = `UPDATE magodmis.orderscheduledetails SET QtyScheduled='${item.QtyScheduled}' WHERE SchDetailsID='${item.SchDetailsID}'`;
+
+              // Execute the update query for magodmis.orderscheduledetails
+              misQueryMod(updateQuery2, (err, result) => {
+                if (err) {
+                  console.log("Error executing update query 2:", err);
+                  return res.status(500).json({ error: "Internal Server Error" });
+                }
+              });
+            }
+          });
+        });
+
+        let updateQuery3 = `UPDATE magodmis.order_list o SET o.ScheduleCount='${scheduleCount}' WHERE o.Order_No='${req.body.formdata[0].Order_No}'`;
+
+        let selectSRLQuery = `SELECT ScheduleNo FROM magodmis.orderschedule WHERE Order_No='${req.body.formdata[0].Order_No}'`;
+
+        misQueryMod(selectSRLQuery, (err, selectSRLData) => {
+          if (err) {
+            console.log("Error executing select query for ScheduleNo:", err);
+            return res.status(500).json({ error: "Internal Server Error" });
+          } else {
+            let nextSRL;
+            if (selectSRLData.length === 0) {
+              nextSRL = "01";
+            } else {
+              const maxSRL = Math.max(
+                ...selectSRLData.map(
+                  (row) => parseInt(row.ScheduleNo) || 0
+                )
+              );
+              nextSRL = (maxSRL === -Infinity ? 1 : maxSRL + 1)
+                .toString()
+                .padStart(2, "0");
+            }
+
+            let neworderSch = `${req.body.formdata[0].Order_No} ${nextSRL}`;
+
+            let updateSRLQuery = `UPDATE magodmis.orderschedule 
+                                  SET OrdSchNo='${neworderSch}', 
+                                      ScheduleNo='${nextSRL}', 
+                                      Schedule_status='Tasked', 
+                                      schTgtDate='${formattedDate}', 
+                                      ScheduleDate=now() 
+                                  WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+            let updateQuery2 = `UPDATE orderscheduledetails SET ScheduleNo='${neworderSch}', Schedule_Srl='${nextSRL}' 
+                                WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+            misQueryMod(updateSRLQuery, (err, result4) => {
+              if (err) {
+                console.log("Error executing update query for ScheduleNo:", err);
+                return res.status(500).json({ error: "Internal Server Error" });
+              } else {
+                misQueryMod(updateQuery2, (err, result2) => {
+                  if (err) {
+                    console.log("Error executing update query 2:", err);
+                    return res.status(500).json({ error: "Internal Server Error" });
+                  } else {
+                    misQueryMod(updateQuery3, (err, result3) => {
+                      if (err) {
+                        console.log("Error executing update query 3:", err);
+                        return res.status(500).json({ error: "Internal Server Error" });
+                      } else {
+                        /////Create Task
+                        /////Create Task
+                        let selectScheduleDetailsQuery = `SELECT * FROM magodmis.orderscheduledetails WHERE ScheduleId='${req.body.formdata[0].ScheduleId}'`;
+
+                        misQueryMod(selectScheduleDetailsQuery, (err, scheduleDetails) => {
+                          if (err) {
+                            console.log("Error executing select query for orderscheduledetails:", err);
+                            return res.status(500).json({
+                              error: "Internal Server Error",
+                            });
+                          } else {
+                            const taskCounters = {};
+                            let taskNumber = 1;
+                        
+                            // Modify the grouping logic based on req.body.Type
+
+                            const groupedTasks = req.body.Type === 'Profile'
+                            ? scheduleDetails.reduce((acc, row) => {
+                                // Create a key for grouping based on Mtrl_Code, MProcess, and Operation
+                                const key = `${row.Mtrl_Code}_${row.MProcess}_${row.Operation}`;
+                          
+                                // Initialize the task counter for this unique key if not already present
+                                if (!taskCounters[key]) {
+                                  taskCounters[key] = taskNumber.toString().padStart(2, "0"); // Assign a task number and increment the counter
+                                  taskNumber++; 
+                                }
+                          
+                                // Generate the task number with the format "neworderSch taskNumber"
+                                row.TaskNo = `${neworderSch} ${taskCounters[key]}`;
+
+                                console.log("row.TaskNo is",row.TaskNo);
+                          
+                                // Group rows by TaskNo
+                                if (!acc[row.TaskNo]) {
+                                  acc[row.TaskNo] = [];
+                                }
+                          
+                                // Add the current row to the task group
+                                acc[row.TaskNo].push(row);
+                                return acc;
+                              }, {})
+                                : // For 'Service' and 'Fabrication', create a separate task for each row, ensuring unique TaskNo
+                                  scheduleDetails.reduce((acc, row) => {
+                                    row.TaskNo = `${neworderSch} ${taskNumber.toString().padStart(2, "0")}`;
+                                    taskNumber++; 
+                                    console.log("This is service/fabrication part executing for SchDetailsID:", row.SchDetailsID);
+                            
+                                    acc[row.SchDetailsID] = [row]; // Ensure each row gets a unique task based on SchDetailsID
+                                    return acc;
+                                  }, {});
+                            
+                        
+                            // Function to execute database queries
+                            const queryDatabase = (query) => {
+                              return new Promise((resolve, reject) => {
+                                misQueryMod(query, (err, results) => {
+                                  if (err) {
+                                    return reject(err);
+                                  }
+                                  resolve(results);
+                                });
+                              });
+                            };
+                        
+                            // Function to process a single task (for a group of rows with the same TaskNo)
+                            const processTask = async (taskGroup) => {
+                              try {
+                                const row = taskGroup[0]; // Use the first row to get the common details
+                            
+                                // Query to get the ProcessID based on the ProcessDescription
+                                let selectProcessIdQuery = `SELECT ProcessID FROM machine_data.magod_process_list WHERE ProcessDescription='${row.Operation}'`;
+                                const processIdData = await queryDatabase(selectProcessIdQuery);
+                            
+                                if (processIdData.length === 0) {
+                                  console.log(`No ProcessID found for Operation ${row.Operation}`);
+                                  throw new Error(`No ProcessID found for Operation ${row.Operation}`);
+                                }
+                            
+                                const MProcess = processIdData[0].ProcessID;
+                            
+                                // Calculate total NoOfDwgs and TotalParts for the task
+                                const noOfDwgs = taskGroup.length;
+                                const totalParts = taskGroup.reduce((sum, item) => sum + item.QtyScheduled, 0);
+                            
+                                let NcTaskId;
+                            
+                                // Check if the Operation Type is "Profile"
+                                if (req.body.Type === "Profile") {
+                                  // Check if an entry already exists in the nc_task_list table
+                                  let selectTaskQuery = `SELECT * FROM magodmis.nc_task_list WHERE ScheduleID='${row.ScheduleId}' AND Mtrl_Code='${row.Mtrl_Code}'`;
+                                  const existingTaskData = await queryDatabase(selectTaskQuery);
+
+
+                            
+                                  if (existingTaskData.length > 0) {
+                                    // Entry exists, so update it
+                                    let updateNcTaskListQuery = `UPDATE magodmis.nc_task_list
+                                                                 SET TaskNo='${row.TaskNo}', NoOfDwgs='${noOfDwgs}', TotalParts='${totalParts}', 
+                                                                     MProcess='${MProcess}', Operation='${row.Operation}', ScheduleNo='${neworderSch}'
+                                                                 WHERE ScheduleID='${row.ScheduleId}' AND Mtrl_Code='${row.Mtrl_Code}'`;
+                                    await queryDatabase(updateNcTaskListQuery);
+
+                                    NcTaskId = existingTaskData[0].NcTaskId;
+                                  } else {
+                                    // Entry does not exist, insert a new task
+                                    let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
+                                                                  ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
+                                                                  VALUES('${row.TaskNo}', '${row.ScheduleId}', '${formattedDate}',
+                                                                  '${req.body.formdata[0].OrdSchNo}', '${neworderSch}', 
+                                                                  '${req.body.formdata[0].Cust_Code}', '${row.Mtrl_Code}',
+                                                                  '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '${noOfDwgs}',
+                                                                  '${totalParts}', '${MProcess}', '${row.Operation}')`;
+                                    const insertResult = await queryDatabase(insertNcTaskListQuery);
+                                    NcTaskId = insertResult.insertId;
+                                  }
+                                } else {
+                                  // If not Profile, directly insert the new task
+                                  let insertNcTaskListQuery = `INSERT INTO magodmis.nc_task_list(TaskNo, ScheduleID, DeliveryDate, order_No,
+                                                              ScheduleNo, Cust_Code, Mtrl_Code, MTRL, Thickness, CustMtrl, NoOfDwgs, TotalParts, MProcess, Operation) 
+                                                              VALUES('${row.TaskNo}', '${row.ScheduleId}', '${formattedDate}',
+                                                              '${req.body.formdata[0].OrdSchNo}', '${neworderSch}', 
+                                                              '${req.body.formdata[0].Cust_Code}', '${row.Mtrl_Code}',
+                                                              '${row.Mtrl}', '${row.Mtrl}', '${row.Mtrl_Source}', '${noOfDwgs}',
+                                                              '${totalParts}', '${MProcess}', '${row.Operation}')`;
+                                  const insertResult = await queryDatabase(insertNcTaskListQuery);
+                                  NcTaskId = insertResult.insertId;
+                                  console.log(`Inserted new task in nc_task_list for non-Profile Operation for ScheduleID: ${row.ScheduleId} and Mtrl_Code: ${row.Mtrl_Code}`);
+                                }
+                            
+                                // Common queries for both insert and update
+                                for (const row of taskGroup) {
+                                  // Update TaskNo and NcTaskId for each row in the task group
+                                  let updateTaskNoQuery = `UPDATE magodmis.orderscheduledetails 
+                                                           SET TaskNo='${row.TaskNo}', NcTaskId='${NcTaskId}'
+                                                           WHERE SchDetailsID='${row.SchDetailsID}'`;
+                                  await queryDatabase(updateTaskNoQuery);
+                            
+                                  // Insert into task_partslist table using the newly inserted NcTaskId
+                                  let insertTaskPartsListQuery = `INSERT INTO magodmis.task_partslist(NcTaskId, TaskNo, SchDetailsId, DwgName, QtyToNest, OrdScheduleSrl, 
+                                                                OrdSch, HasBOM) 
+                                                                SELECT '${NcTaskId}', '${row.TaskNo}', o.SchDetailsID, o.DwgName, o.QtyScheduled, o.Schedule_Srl,
+                                                                '${neworderSch}', o.HasBOM 
+                                                                FROM magodmis.orderscheduledetails o WHERE o.SchDetailsID='${row.SchDetailsID}'`;
+                                  await queryDatabase(insertTaskPartsListQuery);
+                                }
+                              } catch (err) {
+                                console.log("Error processing task:", err);
+                              }
+                            };
+                            
+                            
+                            // Process each task sequentially
+                            const processAllTasks = async () => {
+                              for (const taskGroup of Object.values(groupedTasks)) {
+                                await processTask(taskGroup);
+                              }
+                            };
+                            
+                            // Start processing tasks
+                            processAllTasks();
+                            
+                            return res
+                              .status(200)
+                              .json({
+                                message: "Scheduled",
+                              });
+                            
+                          }
+                        });
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Error in /scheduleAfterLogin:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 
 //Sales Contact
 ScheduleListRouter.get(`/getSalesContact`, async (req, res, next) => {
@@ -907,6 +1257,7 @@ ScheduleListRouter.post(`/onClickPerformce`, async (req, res, next) => {
         data1.forEach((row) => {
           machineTimeMap[row.NcTaskId] = row.MachineTime;
         });
+
 
         // Calculate HourRate and TargetHourRate for each row in data
         data.forEach((row) => {
@@ -961,7 +1312,6 @@ function executeFirstQuery(scheduleId, callback) {
   // Execute the first query
   misQueryMod(query, callback);
 }
-
 // Function to execute the second query
 function executeSecondQuery(scheduleId, callback) {
   const query = `
@@ -982,6 +1332,8 @@ function executeSecondQuery(scheduleId, callback) {
   // Execute the second query
   misQueryMod(query, callback);
 }
+
+
 
 //Check if Fixture Orders Exists or not
 ScheduleListRouter.post(`/checkFixtureOrder`, async (req, res, next) => {
@@ -1077,7 +1429,6 @@ ScheduleListRouter.post(`/fixtureOrder`, async (req, res, next) => {
 
 ///DELETE SCHEDULE
 ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
-  // console.log("req.body /getTaskandMterial is",req.body);
   let query = `Delete  FROM magodmis.orderschedule where ScheduleId='${req.body.rowScheduleList.ScheduleId}'`;
 
   try {
@@ -1095,7 +1446,6 @@ ScheduleListRouter.post(`/deleteScheduleList`, async (req, res, next) => {
 
 ///Delete Dwg
 ScheduleListRouter.post(`/deleteDwgOrderSch`, async (req, res, next) => {
-  // console.log("req.body /getTaskandMterial is",req.body);
   let query = `Delete  FROM magodmis.orderscheduledetails where ScheduleId='${req.body.rowScheduleList.ScheduleId}'`;
 
   try {
@@ -1142,7 +1492,7 @@ ScheduleListRouter.post(`/createProfileOrder`, async (req, res, next) => {
     .toISOString()
     .replace("T", " ")
     .replace(/\.\d{3}Z$/, "");
-  
+
   try {
     // Fetch current Running_No
     let getrunningNoQuery = `SELECT Running_No FROM magod_setup.magod_runningno WHERE SrlType='internalProfile'`;
@@ -1172,7 +1522,7 @@ ScheduleListRouter.post(`/createProfileOrder`, async (req, res, next) => {
           '${req.body.formdata[0].SalesContact}', '${req.body.formdata[0].Dealing_Engineer}', '${req.body.formdata[0].Dealing_Engineer}', 'Recorded',
           '${req.body.formdata[0].Special_Instructions}', 'ByOrder', '0', '0', 'Magod Laser', '0', 'Shop Floor', 'By Hand', 'Profile', 'Scheduled', '0', 'None',
           '${req.body.formdata[0].ScheduleId}')`;
-        
+
         misQueryMod(insertQuery, (err, insertResult) => {
           if (err) {
             console.log("Error inserting order:", err);
@@ -1252,6 +1602,81 @@ ScheduleListRouter.post(`/PrintPdf`, async (req, res, next) => {
 ScheduleListRouter.post(`/getCustomerName`, async (req, res, next) => {
   // console.log("req.body /getCustomerName is",req.body);
   let query = `SELECT Cust_name FROM magodmis.cust_data  where Cust_Code='${req.body.formdata[0].Cust_Code}'
+  `;
+
+  try {
+    misQueryMod(query, (err, data) => {
+      if (err) {
+        console.log("err", err);
+      } else {
+        res.send(data);
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+//get customer sumary data  (customerinfo table)
+ScheduleListRouter.post(`/getCustomerSummary`, async (req, res, next) => {
+  console.log("req.body /getCustomerSummary is",req.body.formdata[0].Cust_Code);
+  let query = `SELECT 
+  ab.Cust_Code,
+  ab.Cust_Name, 
+  SUM(DueAmt30 + DueAmt60 + DueAmt90 + DueAmt180 + DueAmt365 + DueAmtAbv365) AS TotalDues,         
+  SUM(DueAmt30) AS DueAmt30, 
+  SUM(DueAmt60) AS DueAmt60, 
+  SUM(DueAmt90) AS DueAmt90,         
+  SUM(DueAmt180) AS DueAmt180, 
+  SUM(DueAmt365) AS DueAmt365, 
+  SUM(DueAmtAbv365) AS DueAmtAbv365 
+FROM (
+  SELECT 
+      dd.Cust_Code,
+      c.Cust_Name,
+      c.CreditTime,
+      CASE
+          WHEN (DATEDIFF(CURDATE(), dd.inv_date) <= 30) THEN (dd.GrandTotal - dd.PymtAmtRecd) 
+          ELSE 0
+      END AS DueAmt30,
+      CASE
+          WHEN (DATEDIFF(CURDATE(), dd.inv_date) > 30 AND DATEDIFF(CURDATE(), dd.inv_date) <= 60) 
+          THEN (dd.GrandTotal - dd.PymtAmtRecd) 
+          ELSE 0
+      END AS DueAmt60,
+      CASE
+          WHEN (DATEDIFF(CURDATE(), dd.inv_date) > 60 AND DATEDIFF(CURDATE(), dd.inv_date) <= 90) 
+          THEN (dd.GrandTotal - dd.PymtAmtRecd) 
+          ELSE 0
+      END AS DueAmt90,
+      CASE
+          WHEN (DATEDIFF(CURDATE(), dd.inv_date) > 90 AND DATEDIFF(CURDATE(), dd.inv_date) <= 180) 
+          THEN (dd.GrandTotal - dd.PymtAmtRecd) 
+          ELSE 0
+      END AS DueAmt180,
+      CASE
+          WHEN (DATEDIFF(CURDATE(), dd.inv_date) > 180 AND DATEDIFF(CURDATE(), dd.inv_date) <= 365) 
+          THEN (dd.GrandTotal - dd.PymtAmtRecd) 
+          ELSE 0
+      END AS DueAmt365,
+      CASE
+          WHEN (DATEDIFF(CURDATE(), dd.inv_date) > 365) 
+          THEN (dd.GrandTotal - dd.PymtAmtRecd) 
+          ELSE 0
+      END AS DueAmtAbv365
+  FROM 
+      magodmis.draft_dc_inv_register dd
+  LEFT OUTER JOIN 
+      magodmis.cust_data c ON c.Cust_Code = dd.Cust_Code
+  WHERE 
+      dd.PymtAmtRecd < dd.GrandTotal
+) ab
+WHERE 
+  (DueAmt30 > 0 OR DueAmt60 > 0 OR DueAmt90 > 0 OR DueAmt180 > 0 OR DueAmt365 > 0 OR DueAmtAbv365 > 0) 
+  AND ab.Cust_Code = '${req.body.formdata[0].Cust_Code}'
+GROUP BY 
+  ab.Cust_Code, ab.Cust_Name
   `;
 
   try {
